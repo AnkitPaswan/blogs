@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+body {
+  font-family: 'SF Pro Display', sans-serif;
+  background-color: #f9fafb;
+}
+/* Custom CSS to hide the scrollbar */
+.scrollbar-hide {
+  /* For IE and Edge */
+  -ms-overflow-style: none;
+  /* For Firefox */
+  scrollbar-width: none; 
+}
+
+/* For Webkit browsers (Chrome, Safari) */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; 
+}
