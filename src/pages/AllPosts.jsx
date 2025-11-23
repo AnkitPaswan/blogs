@@ -64,7 +64,7 @@ export default function AllPosts() {
           <h2 className="text-lg sm:text-xl font-semibold">
             {selectedCategory === "All"
               ? "All Trending Posts"
-              : `All ${selectedCategory} POSTS`}
+              : `All ${selectedCategory} Posts`}
           </h2>
           <Link
             to="/"
