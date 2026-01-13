@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronLeft, ChevronRight, User,MessageCircle,Heart,Repeat2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, Repeat2 } from "lucide-react";
 import { fetchCategories, fetchPosts } from "../services/api";
 
 
@@ -58,6 +58,29 @@ const SocialMedia = () => {
     carouselElement.scrollBy({ left: scrollAmount, behavior: "smooth" });
   };
 
+  // Get the latest post date for each category
+  const getLatestPostDate = (category) => {
+    const categoryPosts = posts.filter((post) => post.category === category);
+    if (!categoryPosts.length) return new Date(0);
+    
+    // Try to parse dates, if not available use post id as fallback (assuming higher id = newer)
+    const dates = categoryPosts.map((post) => {
+      if (post.date) {
+        const parsed = new Date(post.date);
+        if (!isNaN(parsed)) return parsed;
+      }
+      // Fallback: use id as proxy for recency (higher id = newer)
+      return new Date(post.id || 0);
+    });
+    
+    return new Date(Math.max(...dates));
+  };
+
+  // Sort categories by latest post date (most recent first)
+  const sortedCategories = [...categories].sort((a, b) => {
+    return getLatestPostDate(b) - getLatestPostDate(a);
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -80,7 +103,98 @@ const SocialMedia = () => {
           Updates every 15 minutes
         </p>
 
-        {categories.map((category) => {
+        {/* Trending Post Section - Latest 10 posts from all categories */}
+        <section className="mb-14">
+          {/* Heading Row */}
+          <div className="flex justify-between items-center mb-5 border-b border-indigo-200 pb-2">
+            <h3 className="text-2xl md:text-3xl font-semibold text-indigo-700">
+              Trending Posts
+            </h3>
+            <Link
+              to="/allposts"
+              className="text-indigo-600 text-sm font-medium hover:underline flex-shrink-0"
+            >
+              View all →
+            </Link>
+          </div>
+
+          {/* Carousel Wrapper */}
+          <div className="relative">
+            {/* Left Arrow */}
+            <button
+              onClick={() => scrollCarousel("trending", "left")}
+              className="absolute left-1 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition hidden sm:block"
+            >
+              <ChevronLeft size={22} />
+            </button>
+
+            {/* Right Arrow */}
+            <button
+              onClick={() => scrollCarousel("trending", "right")}
+              className="absolute right-1 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition hidden sm:block"
+            >
+              <ChevronRight size={22} />
+            </button>
+
+            {/* Scrollable Area - Latest 10 posts */}
+            <div
+              ref={(el) => (carouselRefs.current["trending"] = el)}
+              className="overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+            >
+              <div className="flex space-x-4 py-3">
+                {posts.slice(0, 10).map((post) => (
+                  <Link
+                    key={post.id}
+                    to={`/blog/${post.id}`}
+                    className="
+                      w-[88vw] xs:w-[92vw]    
+                      sm:w-72 md:w-80                
+                      h-[400px]
+                      border rounded-md p-4 
+                      bg-white shadow-sm hover:shadow-xl 
+                      transition cursor-pointer 
+                      border-gray-200 flex-shrink-0 
+                      flex flex-col snap-start select-none
+                    "
+                  >
+                    {/* Title */}
+                    <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                      {post.title || post.content?.substring(0, 50) + "..."}
+                    </h3>
+
+                    {/* Content */}
+                    <p className="text-sm text-gray-600 whitespace-pre-line mb-3 line-clamp-3 flex-grow">
+                      {post.content}
+                    </p>
+
+                    {/* Image */}
+                    {post.image && (
+                      <img
+                        src={post.image}
+                        alt="post"
+                        className="w-full h-36 object-cover rounded-lg mb-3 border"
+                      />
+                    )}
+
+                    {/* Comment and Share Buttons */}
+                    <div className="mt-auto flex items-center space-x-6 pt-2 border-t border-gray-100">
+                      <button className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition">
+                        <MessageCircle className="w-4 h-4" />
+                        <span className="text-sm">{post.comments || 0}</span>
+                      </button>
+                      <button className="flex items-center space-x-1 text-gray-500 hover:text-green-500 transition">
+                        <Repeat2 className="w-4 h-4" />
+                        <span className="text-sm">{post.retweets || 0}</span>
+                      </button>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {sortedCategories.map((category) => {
           const categoryPosts = posts.filter(
             (post) => post.category === category
           );
@@ -141,24 +255,14 @@ const SocialMedia = () => {
   "
 >
 
-                        {/* User Info */}
-                        <div className="flex items-center space-x-2 mb-3">
-                          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center border">
-                            <User className="w-6 h-6 text-gray-600" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-gray-800">
-                              {post.user}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {post.handle}
-                            </p>
-                          </div>
-                        </div>
+                        {/* Title */}
+                        <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                          {post.title || post.content?.substring(0, 50) + "..."}
+                        </h3>
 
-                        {/* Post Text */}
-                        <p className="text-sm text-gray-800 whitespace-pre-line mb-2 line-clamp-3 min-h-[48px] leading-relaxed">
-                          {post.text}
+                        {/* Content */}
+                        <p className="text-sm text-gray-600 whitespace-pre-line mb-3 line-clamp-3 flex-grow">
+                          {post.content}
                         </p>
 
                         {/* Image */}
@@ -170,35 +274,16 @@ const SocialMedia = () => {
                           />
                         )}
 
-                        {/* BOTTOM FIXED SECTION */}
-                        <div className="mt-auto">
-                          {/* Stats */}
-                          <div className="flex items-center text-gray-500 text-[11px] py-5 border-b border-indigo-200 h-[34px]">
-                            <div className="flex space-x-4">
-                              <span>
-                                <MessageCircle className="inline-block w-4 h-4 mr-1" />
-                                 {post.comments}</span>
-                              <span>
-                                <Repeat2 className="inline-block w-4 h-4 mr-1" />
-                                {post.retweets}</span>
-                              <span>
-                                <Heart className="inline-block w-4 h-4 mr-1" />
-                                {post.likes}</span>
-                            </div>
-                            <span className="ml-auto text-gray-400 text-[12px]">
-                              {post.date}
-                            </span>
-                          </div>
-
-                          {/* Tags */}
-                          <div className="flex justify-between items-center pt-2 text-[10px]">
-                            <span className="bg-indigo-50 text-indigo-600 px-2 py-1 rounded-s-sm font-medium">
-                              {post.category}
-                            </span>
-                            <span className="text-gray-500 font-medium">
-                              {post.tag}
-                            </span>
-                          </div>
+                        {/* Comment and Share Buttons */}
+                        <div className="mt-auto flex items-center space-x-6 pt-2 border-t border-gray-100">
+                          <button className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition">
+                            <MessageCircle className="w-4 h-4" />
+                            <span className="text-sm">{post.comments || 0}</span>
+                          </button>
+                          <button className="flex items-center space-x-1 text-gray-500 hover:text-green-500 transition">
+                            <Repeat2 className="w-4 h-4" />
+                            <span className="text-sm">{post.retweets || 0}</span>
+                          </button>
                         </div>
                       </Link>
                     ))}

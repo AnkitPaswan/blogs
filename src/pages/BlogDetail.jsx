@@ -108,7 +108,7 @@ export default function BlogDetail() {
             {/* Post Text */}
             <div className="prose prose-lg max-w-none mb-6">
               <p className="text-gray-800 leading-relaxed text-lg">
-                {post.text}
+                {post.content}
               </p>
             </div>
 

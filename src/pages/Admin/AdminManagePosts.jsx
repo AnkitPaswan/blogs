@@ -1,27 +1,21 @@
 import { useState, useEffect } from "react";
-import { X, Plus, Edit, Trash2, FileText, Calendar, Heart, MessageCircle, Repeat2, Tag, Image, User, Hash, Save, Search } from "lucide-react";
+import { X, Plus, Edit, Trash2, FileText, Calendar, Heart, MessageCircle, Repeat2, Tag, Image, User, Save, Search } from "lucide-react";
 import { postsAPI } from "../../services/api";
 import { categoryAPI } from "../../services/categoryAPI";
 
 export default function ManagePosts({ posts, setPosts }) {
   const [showModal, setShowModal] = useState(false);
   const [newPost, setNewPost] = useState({
-    user: "",
-    handle: "",
-    text: "",
+    title: "",
+    content: "",
     caption: "",
     category: "",
     tag: "",
-    date: "",
-    likes: 0,
-    comments: 0,
-    retweets: 0,
     image: "",
   });
   const [editPostId, setEditPostId] = useState(null);
 
   const [categories, setCategories] = useState([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(false);
   // const [newCategory, setNewCategory] = useState("");
 
   // Fetch categories on component mount
@@ -31,7 +25,6 @@ export default function ManagePosts({ posts, setPosts }) {
 
   const fetchCategories = async () => {
     try {
-      setCategoriesLoading(true);
       const response = await categoryAPI.getCategories();
       if (Array.isArray(response.data)) {
         setCategories(response.data.map(cat => cat.name));
@@ -42,16 +35,14 @@ export default function ManagePosts({ posts, setPosts }) {
     } catch (error) {
       console.error('Error fetching categories:', error);
       setCategories([]);
-    } finally {
-      setCategoriesLoading(false);
     }
   };
 
   // Add or Update Post
   const handleAddOrEditPost = async (e) => {
     e.preventDefault();
-    if (!newPost.text || !newPost.category) {
-      alert("Please fill post text and select category");
+    if (!newPost.title || !newPost.content || !newPost.category) {
+      alert("Please fill post title, post content and select category");
       return;
     }
 
@@ -67,16 +58,11 @@ export default function ManagePosts({ posts, setPosts }) {
 
       setShowModal(false);
       setNewPost({
-        user: "",
-        handle: "",
-        text: "",
+        title: "",
+        content: "",
         caption: "",
         category: "",
         tag: "",
-        date: "",
-        likes: 0,
-        comments: 0,
-        retweets: 0,
         image: "",
       });
     } catch (error) {
@@ -162,34 +148,16 @@ export default function ManagePosts({ posts, setPosts }) {
 
             {/* Post Content */}
             <div className="p-4">
-              {/* User Info */}
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-800 text-sm">{post.user}</p>
-                  <p className="text-gray-500 text-xs">{post.handle}</p>
-                </div>
-              </div>
 
               {/* Post Text */}
-              <p className="text-gray-700 mb-4 line-clamp-3">{post.text}</p>
+              <p className="text-gray-700 mb-4 line-clamp-3">{post.title}</p>
 
               {/* Post Stats */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-4 text-gray-500 text-sm">
                   <div className="flex items-center space-x-1">
-                    <Heart className="w-4 h-4" />
-                    <span>{post.likes}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
                     <MessageCircle className="w-4 h-4" />
                     <span>{post.comments}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Repeat2 className="w-4 h-4" />
-                    <span>{post.retweets}</span>
                   </div>
                 </div>
                 <div className="flex items-center space-x-1 text-gray-500 text-xs">
@@ -279,33 +247,19 @@ export default function ManagePosts({ posts, setPosts }) {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left Column */}
                 <div className="space-y-6">
-                  {/* User & Handle */}
+                  {/* Post Title */}
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
-                      <User className="w-4 h-4 text-gray-500" />
-                      <label className="text-sm font-medium text-gray-700">Author Information</label>
+                      <FileText className="w-4 h-4 text-gray-500" />
+                      <label className="text-sm font-medium text-gray-700">Post Title</label>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="relative">
-                        <input
-                          type="text"
-                          placeholder="Author name"
-                          className="w-full pl-4 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
-                          value={newPost.user}
-                          onChange={(e) => setNewPost({ ...newPost, user: e.target.value })}
-                        />
-                      </div>
-                      <div className="relative">
-                        <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <input
-                          type="text"
-                          placeholder="Handle (e.g. @user)"
-                          className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
-                          value={newPost.handle}
-                          onChange={(e) => setNewPost({ ...newPost, handle: e.target.value })}
-                        />
-                      </div>
-                    </div>
+                    <input
+                      type="text"
+                      placeholder="Enter post title"
+                      className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
+                      value={newPost.title}
+                      onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                    />
                   </div>
 
                   {/* Post Content */}
@@ -317,9 +271,17 @@ export default function ManagePosts({ posts, setPosts }) {
                     <textarea
                       placeholder="Write your post content here..."
                       className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 min-h-[120px] resize-none"
-                      value={newPost.text}
-                      onChange={(e) => setNewPost({ ...newPost, text: e.target.value })}
+                      value={newPost.content}
+                      onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
                     />
+                  </div>
+
+                  {/* Caption */}
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <FileText className="w-4 h-4 text-gray-500" />
+                      <label className="text-sm font-medium text-gray-700">Caption</label>
+                    </div>
                     <input
                       type="text"
                       placeholder="Post caption (optional)"
@@ -328,30 +290,15 @@ export default function ManagePosts({ posts, setPosts }) {
                       onChange={(e) => setNewPost({ ...newPost, caption: e.target.value })}
                     />
                   </div>
-
-                  {/* Image URL */}
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Image className="w-4 h-4 text-gray-500" />
-                      <label className="text-sm font-medium text-gray-700">Featured Image</label>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Image URL (optional)"
-                      className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
-                      value={newPost.image}
-                      onChange={(e) => setNewPost({ ...newPost, image: e.target.value })}
-                    />
-                  </div>
                 </div>
 
                 {/* Right Column */}
                 <div className="space-y-6">
-                  {/* Category & Tag */}
+                  {/* Category & Tags */}
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
                       <Tag className="w-4 h-4 text-gray-500" />
-                      <label className="text-sm font-medium text-gray-700">Categorization</label>
+                      <label className="text-sm font-medium text-gray-700">Category & Tags</label>
                     </div>
                     <select
                       className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
@@ -365,67 +312,26 @@ export default function ManagePosts({ posts, setPosts }) {
                     </select>
                     <input
                       type="text"
-                      placeholder="Tag (optional)"
+                      placeholder="Tags (comma separated)"
                       className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
                       value={newPost.tag}
                       onChange={(e) => setNewPost({ ...newPost, tag: e.target.value })}
                     />
                   </div>
 
-                  {/* Date & Stats */}
+                  {/* Image */}
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4 text-gray-500" />
-                      <label className="text-sm font-medium text-gray-700">Publication Details</label>
+                      <Image className="w-4 h-4 text-gray-500" />
+                      <label className="text-sm font-medium text-gray-700">Featured Image</label>
                     </div>
                     <input
-                      type="date"
+                      type="text"
+                      placeholder="Image URL"
                       className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
-                      value={newPost.date}
-                      onChange={(e) => setNewPost({ ...newPost, date: e.target.value })}
+                      value={newPost.image}
+                      onChange={(e) => setNewPost({ ...newPost, image: e.target.value })}
                     />
-
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-1">
-                          <Heart className="w-3 h-3 text-red-500" />
-                          <label className="text-xs font-medium text-gray-600">Likes</label>
-                        </div>
-                        <input
-                          type="number"
-                          placeholder="0"
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 text-center"
-                          value={newPost.likes}
-                          onChange={(e) => setNewPost({ ...newPost, likes: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-1">
-                          <MessageCircle className="w-3 h-3 text-blue-500" />
-                          <label className="text-xs font-medium text-gray-600">Comments</label>
-                        </div>
-                        <input
-                          type="number"
-                          placeholder="0"
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 text-center"
-                          value={newPost.comments}
-                          onChange={(e) => setNewPost({ ...newPost, comments: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-1">
-                          <Repeat2 className="w-3 h-3 text-green-500" />
-                          <label className="text-xs font-medium text-gray-600">Shares</label>
-                        </div>
-                        <input
-                          type="number"
-                          placeholder="0"
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 text-center"
-                          value={newPost.retweets}
-                          onChange={(e) => setNewPost({ ...newPost, retweets: e.target.value })}
-                        />
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>

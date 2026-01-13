@@ -176,7 +176,7 @@ export default function AdminDashboard() {
                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">
-                          {post.text.substring(0, 30)}...
+                          {post.content.substring(0, 30)}...
                         </p>
                         <p className="text-xs text-gray-500">{post.date}</p>
                       </div>

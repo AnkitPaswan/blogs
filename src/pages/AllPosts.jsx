@@ -136,7 +136,7 @@ export default function AllPosts() {
 
                   {/* Text */}
                   <p className="text-sm text-gray-800 mb-2 line-clamp-3 min-h-[50px]">
-                    {post.text}
+                    {post.content}
                   </p>
 
                   {/* Image */}
