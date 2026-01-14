@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { X, Plus, Edit, Trash2, FileText, Calendar, Heart, MessageCircle, Repeat2, Tag, Image, User, Save, Search } from "lucide-react";
-import { postsAPI } from "../../services/api";
+import { X, Plus, Edit, Trash2, FileText, Calendar, MessageCircle, Tag, Image, Search, Filter } from "lucide-react";
+import { postsAPI, searchPosts } from "../../services/api";
 import { categoryAPI } from "../../services/categoryAPI";
+import PostsModal from "../../components/Admin/postsModal";
 
-export default function ManagePosts({ posts, setPosts }) {
+export default function ManagePosts({ posts: initialPosts, setPosts: setParentPosts }) {
   const [showModal, setShowModal] = useState(false);
   const [newPost, setNewPost] = useState({
     title: "",
@@ -14,14 +15,21 @@ export default function ManagePosts({ posts, setPosts }) {
     image: "",
   });
   const [editPostId, setEditPostId] = useState(null);
-
   const [categories, setCategories] = useState([]);
-  // const [newCategory, setNewCategory] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [filteredPosts, setFilteredPosts] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Fetch categories on component mount
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  // Filter posts when search query or category changes
+  useEffect(() => {
+    filterPosts();
+  }, [searchQuery, selectedCategory, initialPosts]);
 
   const fetchCategories = async () => {
     try {
@@ -38,6 +46,33 @@ export default function ManagePosts({ posts, setPosts }) {
     }
   };
 
+  const filterPosts = async () => {
+    // If there's a search query, use the search API
+    if (searchQuery.trim().length >= 2) {
+      setIsSearching(true);
+      try {
+        const searchResults = await searchPosts(searchQuery);
+        // Filter by category if selected
+        const filtered = selectedCategory 
+          ? searchResults.filter(post => post.category === selectedCategory)
+          : searchResults;
+        setFilteredPosts(filtered);
+      } catch (error) {
+        console.error('Search error:', error);
+        setFilteredPosts([]);
+      } finally {
+        setIsSearching(false);
+      }
+    } else if (selectedCategory) {
+      // If no search query but category is selected, filter locally
+      const filtered = initialPosts.filter(post => post.category === selectedCategory);
+      setFilteredPosts(filtered);
+    } else {
+      // Show all posts
+      setFilteredPosts(initialPosts);
+    }
+  };
+
   // Add or Update Post
   const handleAddOrEditPost = async (e) => {
     e.preventDefault();
@@ -49,11 +84,11 @@ export default function ManagePosts({ posts, setPosts }) {
     try {
       if (editPostId) {
         await postsAPI.updatePost(editPostId, newPost);
-        setPosts(posts.map(p => p.id === editPostId ? { ...p, ...newPost } : p));
+        setParentPosts(initialPosts.map(p => p.id === editPostId ? { ...p, ...newPost } : p));
         setEditPostId(null);
       } else {
         const response = await postsAPI.createPost(newPost);
-        setPosts([...posts, response.data]);
+        setParentPosts([...initialPosts, response.data]);
       }
 
       setShowModal(false);
@@ -74,7 +109,7 @@ export default function ManagePosts({ posts, setPosts }) {
     if (window.confirm("Are you sure you want to delete this post?")) {
       try {
         await postsAPI.deletePost(id);
-        setPosts(posts.filter(p => p.id !== id));
+        setParentPosts(initialPosts.filter(p => p.id !== id));
       } catch (error) {
         alert('Error deleting post: ' + error.response?.data?.message || error.message);
       }
@@ -86,6 +121,14 @@ export default function ManagePosts({ posts, setPosts }) {
     setEditPostId(post.id);
     setShowModal(true);
   };
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("");
+  };
+
+  // Determine which posts to display
+  const displayPosts = filteredPosts.length > 0 || searchQuery.length >= 2 || selectedCategory ? filteredPosts : initialPosts;
 
   return (
     <div className="relative h-full">
@@ -109,8 +152,25 @@ export default function ManagePosts({ posts, setPosts }) {
               <input
                 type="text"
                 placeholder="Search posts..."
-                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm w-full sm:w-48"
               />
+            </div>
+
+            {/* Category Filter */}
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm w-full sm:w-48 appearance-none"
+              >
+                <option value="">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
             </div>
 
             {/* New Post Button */}
@@ -124,239 +184,161 @@ export default function ManagePosts({ posts, setPosts }) {
           </div>
         </div>
 
+        {/* Active Filters */}
+        {(searchQuery || selectedCategory) && (
+          <div className="flex items-center gap-2 mt-4">
+            <span className="text-sm text-gray-500">Active filters:</span>
+            {searchQuery && (
+              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                Search: "{searchQuery}"
+                <button onClick={() => setSearchQuery("")} className="hover:text-blue-900">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {selectedCategory && (
+              <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                Category: {selectedCategory}
+                <button onClick={() => setSelectedCategory("")} className="hover:text-purple-900">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            <button
+              onClick={handleClearFilters}
+              className="text-sm text-gray-500 hover:text-gray-700 underline ml-2"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+
       </div>
 
+      {/* Loading State */}
+      {isSearching && (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Searching...</p>
+        </div>
+      )}
+
       {/* Posts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {posts.map((post) => (
-          <div key={post.id} className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-            {/* Post Image */}
-            {post.image && (
-              <div className="relative h-32 overflow-hidden">
-                <img
-                  src={post.image}
-                  alt="Post"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-2 right-2">
-                  <span className="bg-black/50 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs font-medium">
-                    {post.category}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Post Content */}
-            <div className="p-4">
-
-              {/* Post Text */}
-              <p className="text-gray-700 mb-4 line-clamp-3">{post.title}</p>
-
-              {/* Post Stats */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-4 text-gray-500 text-sm">
-                  <div className="flex items-center space-x-1">
-                    <MessageCircle className="w-4 h-4" />
-                    <span>{post.comments}</span>
+      {!isSearching && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {displayPosts.map((post) => (
+            <div key={post.id} className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              {/* Post Image */}
+              {post.image && (
+                <div className="relative h-32 overflow-hidden">
+                  <img
+                    src={post.image}
+                    alt="Post"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-2 right-2">
+                    <span className="bg-black/50 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs font-medium">
+                      {post.category}
+                    </span>
                   </div>
-                </div>
-                <div className="flex items-center space-x-1 text-gray-500 text-xs">
-                  <Calendar className="w-3 h-3" />
-                  <span>{post.date}</span>
-                </div>
-              </div>
-
-              {/* Tags */}
-              {post.tag && (
-                <div className="flex items-center space-x-1 mb-4">
-                  <Tag className="w-3 h-3 text-gray-400" />
-                  <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
-                    {post.tag}
-                  </span>
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handleEdit(post)}
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                >
-                  <Edit className="w-4 h-4" />
-                  <span>Edit</span>
-                </button>
-                <button
-                  onClick={() => handleDelete(post.id)}
-                  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-2 px-4 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Delete</span>
-                </button>
+              {/* Post Content */}
+              <div className="p-4">
+
+                {/* Post Text */}
+                <p className="text-gray-700 mb-4 line-clamp-3">{post.title}</p>
+
+                {/* Post Stats */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4 text-gray-500 text-sm">
+                    <div className="flex items-center space-x-1">
+                      <MessageCircle className="w-4 h-4" />
+                      <span>{post.comments}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-1 text-gray-500 text-xs">
+                    <Calendar className="w-3 h-3" />
+                    <span>{post.date || post.createdAt}</span>
+                  </div>
+                </div>
+
+                {/* Tags */}
+                {post.tag && (
+                  <div className="flex items-center space-x-1 mb-4">
+                    <Tag className="w-3 h-3 text-gray-400" />
+                    <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
+                      {post.tag}
+                    </span>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleEdit(post)}
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  >
+                    <Edit className="w-4 h-4" />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    onClick={() => handleDelete(post.id)}
+                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-2 px-4 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Empty State */}
-      {posts.length === 0 && (
+      {!isSearching && displayPosts.length === 0 && (
         <div className="text-center py-12">
           <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-600 mb-2">No posts yet</h3>
-          <p className="text-gray-500 mb-6">Get started by creating your first blog post</p>
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 mx-auto"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Create First Post</span>
-          </button>
+          <h3 className="text-lg font-medium text-gray-600 mb-2">
+            {searchQuery || selectedCategory ? "No matching posts found" : "No posts yet"}
+          </h3>
+          <p className="text-gray-500 mb-6">
+            {searchQuery || selectedCategory 
+              ? "Try adjusting your search or filter criteria" 
+              : "Get started by creating your first blog post"}
+          </p>
+          {(searchQuery || selectedCategory) ? (
+            <button
+              onClick={handleClearFilters}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 mx-auto"
+            >
+              <X className="w-5 h-5" />
+              <span>Clear Filters</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 mx-auto"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Create First Post</span>
+            </button>
+          )}
         </div>
       )}
 
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-white/20 relative animate-fadeIn max-h-[90vh] overflow-hidden">
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-2xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                    {editPostId ? <Edit className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold">
-                      {editPostId ? "Edit Post" : "Create New Post"}
-                    </h3>
-                    <p className="text-blue-100 text-sm">
-                      {editPostId ? "Update your blog post details" : "Share your thoughts with the world"}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="text-white/70 hover:text-white hover:bg-white/10 rounded-lg p-2 transition-all duration-200"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <form onSubmit={handleAddOrEditPost} className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column */}
-                <div className="space-y-6">
-                  {/* Post Title */}
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <FileText className="w-4 h-4 text-gray-500" />
-                      <label className="text-sm font-medium text-gray-700">Post Title</label>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Enter post title"
-                      className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
-                      value={newPost.title}
-                      onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-                    />
-                  </div>
-
-                  {/* Post Content */}
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <FileText className="w-4 h-4 text-gray-500" />
-                      <label className="text-sm font-medium text-gray-700">Post Content</label>
-                    </div>
-                    <textarea
-                      placeholder="Write your post content here..."
-                      className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 min-h-[120px] resize-none"
-                      value={newPost.content}
-                      onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-                    />
-                  </div>
-
-                  {/* Caption */}
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <FileText className="w-4 h-4 text-gray-500" />
-                      <label className="text-sm font-medium text-gray-700">Caption</label>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Post caption (optional)"
-                      className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
-                      value={newPost.caption}
-                      onChange={(e) => setNewPost({ ...newPost, caption: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                {/* Right Column */}
-                <div className="space-y-6">
-                  {/* Category & Tags */}
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Tag className="w-4 h-4 text-gray-500" />
-                      <label className="text-sm font-medium text-gray-700">Category & Tags</label>
-                    </div>
-                    <select
-                      className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
-                      value={newPost.category}
-                      onChange={(e) => setNewPost({ ...newPost, category: e.target.value })}
-                    >
-                      <option value="">Select Category</option>
-                      {categories.map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="text"
-                      placeholder="Tags (comma separated)"
-                      className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
-                      value={newPost.tag}
-                      onChange={(e) => setNewPost({ ...newPost, tag: e.target.value })}
-                    />
-                  </div>
-
-                  {/* Image */}
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Image className="w-4 h-4 text-gray-500" />
-                      <label className="text-sm font-medium text-gray-700">Featured Image</label>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Image URL"
-                      className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
-                      value={newPost.image}
-                      onChange={(e) => setNewPost({ ...newPost, image: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Form Actions */}
-              <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-6 py-3 rounded-lg border border-gray-300 hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>{editPostId ? "Update Post" : "Create Post"}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <PostsModal
+        showModal={showModal}
+        setShowModal={setShowModal}
+        newPost={newPost}
+        setNewPost={setNewPost}
+        editPostId={editPostId}
+        categories={categories}
+        handleAddOrEditPost={handleAddOrEditPost}
+      />
     </div>
   );
 }

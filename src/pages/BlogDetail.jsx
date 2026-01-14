@@ -1,13 +1,25 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Calendar, User, Tag, Heart, MessageCircle, Repeat2 } from "lucide-react";
-import { postsAPI } from "../services/api";
+import {
+  ArrowLeft,
+  Tag,
+  MessageCircle,
+} from "lucide-react";
+import { postsAPI, commentsAPI } from "../services/api";
+import ShareButton from "../utils/ShareButton";
 
 export default function BlogDetail() {
   const { id } = useParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [showCommentForm, setShowCommentForm] = useState(false);
+  const [commentFormData, setCommentFormData] = useState({
+    name: "",
+    comment: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -15,17 +27,78 @@ export default function BlogDetail() {
         const response = await postsAPI.getPost(id);
         setPost(response.data);
         console.log(response);
-        
+
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching post:', error);
-        setError('Post not found');
+        console.error("Error fetching post:", error);
+        setError("Post not found");
         setLoading(false);
       }
     };
 
     fetchPost();
   }, [id]);
+
+  // Track view when post is loaded
+  useEffect(() => {
+    if (!post?.id) return;
+
+    const viewed = localStorage.getItem(`post-viewed-${post.id}`);
+    if (!viewed) {
+      postsAPI.incrementView(post.id).catch(console.error);
+      localStorage.setItem(`post-viewed-${post.id}`, "true");
+    }
+  }, [post?.id]);
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const response = await commentsAPI.getComments(id);
+        setComments(response.data);
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+      }
+    };
+
+    if (id) {
+      fetchComments();
+    }
+  }, [id]);
+
+  const handleCommentInputChange = (e) => {
+    const { name, value } = e.target;
+    setCommentFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!commentFormData.name.trim() || !commentFormData.comment.trim()) {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await commentsAPI.addComment({
+        ...commentFormData,
+        postId: id,
+      });
+      setCommentFormData({ name: "", comment: "" });
+      setShowCommentForm(false);
+
+      // Refresh comments list
+      const response = await commentsAPI.getComments(id);
+      setComments(response.data);
+    } catch (error) {
+      console.error("Error submitting comment:", error);
+      alert("Failed to submit comment. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const toggleCommentForm = () => {
+    setShowCommentForm(!showCommentForm);
+  };
 
   if (loading) {
     return (
@@ -42,8 +115,12 @@ export default function BlogDetail() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Post Not Found</h1>
-          <p className="text-gray-600 mb-6">The post you're looking for doesn't exist.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            Post Not Found
+          </h1>
+          <p className="text-gray-600 mb-6">
+            The post you're looking for doesn't exist.
+          </p>
           <Link
             to="/"
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -90,27 +167,11 @@ export default function BlogDetail() {
 
           {/* Post Content */}
           <div className="p-6 md:p-8">
-            {/* Author Info */}
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-gray-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900">{post.user}</p>
-                <p className="text-sm text-gray-500">{post.handle}</p>
-              </div>
-              <div className="flex items-center text-sm text-gray-500 ml-auto">
-                <Calendar className="w-4 h-4 mr-1" />
-                {post.date}
-              </div>
-            </div>
-
-            {/* Post Text */}
-            <div className="prose prose-lg max-w-none mb-6">
-              <p className="text-gray-800 leading-relaxed text-lg">
-                {post.content}
-              </p>
-            </div>
+            {/* Post Text - Rendered from TipTap HTML content */}
+            <div
+              className="prose prose-lg max-w-none mb-6"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
 
             {/* Caption */}
             {post.caption && (
@@ -131,25 +192,25 @@ export default function BlogDetail() {
               </div>
 
               <div className="flex items-center space-x-6 text-sm text-gray-500">
-                {/* <div className="flex items-center space-x-1">
-                  <Heart className="w-4 h-4" />
-                  <span>{post.likes}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <MessageCircle className="w-4 h-4" />
-                  <span>{post.comments}</span>
-                </div> */}
-                {/* <div className="flex items-center space-x-1">
-                  <Repeat2 className="w-4 h-4" />
-                  <span>{post.retweets}</span>
-                </div> */}
+                <button
+                  onClick={toggleCommentForm}
+                  className="flex items-center space-x-1 hover:text-blue-600 transition-colors"
+                >
+                  <MessageCircle className="text-gray-500" />
+                  <span>{comments.length}</span>
+                </button>
+                <ShareButton
+                  url={`/blog/${post.id || post._id}`}
+                  title={post.title || "Check out this post!"}
+                  // showLabel={false}
+                />
               </div>
             </div>
           </div>
         </div>
 
         {/* Related Posts Section (Optional) */}
-        <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
+        {/* <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-8">
           <h3 className="text-xl font-bold text-gray-900 mb-4">More from {post.category}</h3>
           <p className="text-gray-600">
             Check out more posts in the <span className="font-medium">{post.category}</span> category.
@@ -160,6 +221,112 @@ export default function BlogDetail() {
           >
             View All {post.category} Posts
           </Link>
+        </div> */}
+
+        {/* Comments Section */}
+        <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-gray-900">
+              Comments ({comments.length})
+            </h3>
+            <button
+              onClick={toggleCommentForm}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            >
+              {showCommentForm ? "Cancel" : "Add Comment"}
+            </button>
+          </div>
+
+          {/* Comment Form */}
+          {showCommentForm && (
+            <form
+              onSubmit={handleCommentSubmit}
+              className="mb-8 p-6 bg-gray-50 rounded-xl"
+            >
+              <div className="mb-4">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Your Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={commentFormData.name}
+                  onChange={handleCommentInputChange}
+                  placeholder="Enter your name"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label
+                  htmlFor="comment"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Your Comment
+                </label>
+                <textarea
+                  id="comment"
+                  name="comment"
+                  value={commentFormData.comment}
+                  onChange={handleCommentInputChange}
+                  placeholder="Write your comment here..."
+                  rows={4}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                  required
+                />
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? "Submitting..." : "Submit Comment"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Comments List */}
+          {comments.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">
+              No comments yet. Be the first to comment!
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {comments.map((comment, index) => (
+                <div
+                  key={comment.id || index}
+                  className="p-4 bg-gray-50 rounded-lg flex gap-3"
+                >
+                  {/* User Icon */}
+                  <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-semibold uppercase">
+                    {comment.name?.charAt(0) || "U"}
+                  </div>
+
+                  {/* Comment Content */}
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="font-semibold text-gray-900">
+                        {comment.name}
+                      </h4>
+                      <span className="text-sm text-gray-500">
+                        {comment.createdAt
+                          ? new Date(comment.createdAt).toLocaleDateString()
+                          : "Recently"}
+                      </span>
+                    </div>
+
+                    <p className="text-gray-700">{comment.comment}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

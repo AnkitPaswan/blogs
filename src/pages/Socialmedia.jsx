@@ -1,8 +1,22 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronLeft, ChevronRight, MessageCircle, Repeat2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, Calendar, EyeIcon } from "lucide-react";
 import { fetchCategories, fetchPosts } from "../services/api";
+import ShareButton from "../utils/ShareButton";
 
+// Helper function to format date
+const formatDate = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "";
+  
+  // Format: 13 Jan 2026
+  const day = date.getDate();
+  const month = date.toLocaleString("en-US", { month: "short" });
+  const year = date.getFullYear();
+  
+  return `${day} ${month} ${year}`;
+};
 
 const SocialMedia = () => {
   const location = useLocation(); // ✅ Get current URL
@@ -12,6 +26,7 @@ const SocialMedia = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // const [commentCounts, setCommentCounts] = useState({});
 
   // ✅ Scroll to top on navigation or category change
   useEffect(() => {
@@ -36,6 +51,24 @@ const SocialMedia = () => {
         ]);
         setCategories(fetchedCategories.filter((cat) => cat !== "All"));
         setPosts(fetchedPosts);
+
+        // Fetch comment counts for each post
+        // const counts = {};
+        // await Promise.all(
+        //   fetchedPosts.map(async (post) => {
+        //     try {
+        //       const response = await commentsAPI.getComments(
+        //         post.id || post._id
+        //       );
+        //       counts[post.id || post._id] = response.data.length;
+        //     } catch (err) {
+        //       counts[post.id || post._id] = 0;
+        //       console.log(err);
+              
+        //     }
+        //   })
+        // );
+        // setCommentCounts(counts);
       } catch (err) {
         console.error("Failed to load data:", err);
         setError("Failed to load data. Please try again later.");
@@ -45,6 +78,10 @@ const SocialMedia = () => {
     };
     loadData();
   }, []);
+
+
+
+
 
   const scrollCarousel = (category, direction) => {
     const carouselElement = carouselRefs.current[category];
@@ -62,7 +99,7 @@ const SocialMedia = () => {
   const getLatestPostDate = (category) => {
     const categoryPosts = posts.filter((post) => post.category === category);
     if (!categoryPosts.length) return new Date(0);
-    
+
     // Try to parse dates, if not available use post id as fallback (assuming higher id = newer)
     const dates = categoryPosts.map((post) => {
       if (post.date) {
@@ -72,7 +109,7 @@ const SocialMedia = () => {
       // Fallback: use id as proxy for recency (higher id = newer)
       return new Date(post.id || 0);
     });
-    
+
     return new Date(Math.max(...dates));
   };
 
@@ -176,16 +213,36 @@ const SocialMedia = () => {
                       />
                     )}
 
-                    {/* Comment and Share Buttons */}
-                    <div className="mt-auto flex items-center space-x-6 pt-2 border-t border-gray-100">
-                      <button className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition">
-                        <MessageCircle className="w-4 h-4" />
-                        <span className="text-sm">{post.comments || 0}</span>
-                      </button>
-                      <button className="flex items-center space-x-1 text-gray-500 hover:text-green-500 transition">
-                        <Repeat2 className="w-4 h-4" />
-                        <span className="text-sm">{post.retweets || 0}</span>
-                      </button>
+                    {/* Comment, Share Buttons and Date */}
+                    <div className="mt-auto flex items-center justify-between pt-2 border-t border-gray-100">
+                      <div className="flex items-center space-x-6">
+                        <Link
+                          to={`/blog/${post.id}`}
+                          className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors"
+                        >
+                          <MessageCircle className="text-gray-500" />
+                          <span className="text-sm">
+                            {post.commentCount}
+                            {/* {commentCounts[post.id || post._id] || 0} */}
+                          </span>
+                          <EyeIcon className="text-gray-500" />
+                          <span className="text-sm">
+                            {post.views}
+                          </span>
+                        </Link>
+                        <ShareButton
+                          url={`/blog/${post.id || post._id}`}
+                          title={
+                            post.title || post.content?.substring(0, 50) + "..."
+                          }
+                          // showLabel={false}
+                          className="text-gray-500 hover:text-blue-600"
+                        />
+                      </div>
+                      <div className="flex items-center space-x-1 text-gray-400 text-xs">
+                        <Calendar className="w-3 h-3" />
+                        <span>{formatDate(post.createdAt)}</span>
+                      </div>
                     </div>
                   </Link>
                 ))}
@@ -241,20 +298,19 @@ const SocialMedia = () => {
                   <div className="flex space-x-4 py-3">
                     {categoryPosts.map((post) => (
                       <Link
-  key={post.id}
-  to={`/blog/${post.id}`}
-  className="
-    w-[88vw] xs:w-[92vw]    
-    sm:w-72 md:w-80                
-    h-[400px]
-    border rounded-md p-4 
-    bg-white shadow-sm hover:shadow-xl 
-    transition cursor-pointer 
-    border-gray-200 flex-shrink-0 
-    flex flex-col snap-start select-none
-  "
->
-
+                        key={post.id}
+                        to={`/blog/${post.id}`}
+                        className="
+                          w-[88vw] xs:w-[92vw]    
+                          sm:w-72 md:w-80                
+                          h-[400px]
+                          border rounded-md p-4 
+                          bg-white shadow-sm hover:shadow-xl 
+                          transition cursor-pointer 
+                          border-gray-200 flex-shrink-0 
+                          flex flex-col snap-start select-none
+                        "
+                      >
                         {/* Title */}
                         <h3 className="text-lg font-semibold text-gray-800 mb-3">
                           {post.title || post.content?.substring(0, 50) + "..."}
@@ -274,16 +330,37 @@ const SocialMedia = () => {
                           />
                         )}
 
-                        {/* Comment and Share Buttons */}
-                        <div className="mt-auto flex items-center space-x-6 pt-2 border-t border-gray-100">
-                          <button className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition">
-                            <MessageCircle className="w-4 h-4" />
-                            <span className="text-sm">{post.comments || 0}</span>
-                          </button>
-                          <button className="flex items-center space-x-1 text-gray-500 hover:text-green-500 transition">
-                            <Repeat2 className="w-4 h-4" />
-                            <span className="text-sm">{post.retweets || 0}</span>
-                          </button>
+                        {/* Comment, Share Buttons and Date */}
+                        <div className="mt-auto flex items-center justify-between pt-2 border-t border-gray-100">
+                          <div className="flex items-center space-x-6">
+                            <Link
+                              to={`/blog/${post.id}`}
+                              className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors"
+                            >
+                              <MessageCircle className="text-gray-500" />
+                              <span className="text-sm">
+                                {post.commentCount}
+                                {/* {commentCounts[post.id || post._id] || 0} */}
+                              </span>
+                            </Link>
+                            <div className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors">
+                              <EyeIcon className="text-gray-500" />
+                              <span className="text-sm">{post.views}</span>
+                            </div>
+                            <ShareButton
+                              url={`/blog/${post.id || post._id}`}
+                              title={
+                                post.title ||
+                                post.content?.substring(0, 50) + "..."
+                              }
+                              // showLabel={false}
+                              className="text-gray-500 hover:text-blue-600"
+                            />
+                          </div>
+                          <div className="flex items-center space-x-1 text-gray-400 text-xs">
+                            <Calendar className="w-3 h-3" />
+                            <span>{formatDate(post.createdAt)}</span>
+                          </div>
                         </div>
                       </Link>
                     ))}
@@ -299,3 +376,4 @@ const SocialMedia = () => {
 };
 
 export default SocialMedia;
+

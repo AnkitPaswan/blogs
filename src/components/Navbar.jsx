@@ -1,12 +1,13 @@
 import { X, Search, Menu, BarChart3, FileText, Clock, Bookmark, Briefcase, Bell, Sliders, Dices, Package, Home as HomeIcon, LayoutDashboard as LayoutDashboardIcon } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
+import Searchbar from "./Searchbar";
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const searchRef = useRef(null);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const mobileSearchRef = useRef(null);
 
   // Define the sidebar menu items and tools
   const menuItems = [
@@ -37,10 +38,10 @@ export default function Navbar() {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Close search when clicking outside
+  // Close mobile search when clicking outside
   useEffect(() => {
     function handleClickOutside(e) {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
+      if (mobileSearchRef.current && !mobileSearchRef.current.contains(e.target)) {
         setShowMobileSearch(false);
       }
     }
@@ -66,27 +67,9 @@ export default function Navbar() {
         {/* RIGHT SIDE */}
         <div className="flex items-center space-x-2">
 
-          {/* DESKTOP SEARCH BOX */}
-          <div className="hidden sm:block relative w-[350px]">
-            <Search
-              size={18}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
-            />
-
-            <input
-              type="text"
-              placeholder="Search for letest articles..."
-              className="
-                w-full pl-10 pr-4 py-1.5 text-sm
-                border border-gray-300
-                rounded-xl
-                text-gray-700
-                placeholder-gray-400
-                focus:outline-none
-                focus:ring-2 focus:ring-blue-500
-                transition
-              "
-            />
+          {/* DESKTOP SEARCH */}
+          <div className="hidden sm:block w-[350px]">
+            <Searchbar />
           </div>
 
           {/* MOBILE SEARCH ICON */}
@@ -110,30 +93,19 @@ export default function Navbar() {
       {/* MOBILE SEARCH OVERLAY */}
       {showMobileSearch && (
         <div
-          ref={searchRef}
+          ref={mobileSearchRef}
           className="
             sm:hidden fixed top-0 left-0 w-full bg-white
-            px-4 py-3 shadow-lg z-50 flex items-center space-x-3
+            px-4 py-3 shadow-lg z-50 flex items-center
             animate-slideDown
           "
         >
-          {/* <Search size={20} className="text-gray-500" /> */}
-
-          <input
-            autoFocus
-            type="text"
-            placeholder="Search anything..."
-            className="
-              flex-1 py-2 px-2
-              border border-gray-300
-              rounded-xl text-sm
-              focus:ring-2 focus:ring-blue-500 outline-none
-            "
-          />
-
+          <div className="flex-1">
+            <Searchbar />
+          </div>
           <button
             onClick={() => setShowMobileSearch(false)}
-            className="p-2 rounded-full bg-gray-100"
+            className="ml-3 p-2 rounded-full bg-gray-100"
           >
             <X size={20} />
           </button>
@@ -143,33 +115,21 @@ export default function Navbar() {
       {/* MOBILE MENU DROPDOWN */}
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t shadow-lg">
-          {/* Main Nav Links */}
-          {/* <Link to="/" className="block px-4 py-2 text-gray-600 hover:bg-gray-100" onClick={toggleMenu}>
-            Home
-          </Link>
-          <Link to="/AllPosts" className="block px-4 py-2 text-gray-600 hover:bg-gray-100" onClick={toggleMenu}>
-            All Posts
-          </Link>
-          <Link to="/about" className="block px-4 py-2 text-gray-600 hover:bg-gray-100" onClick={toggleMenu}>
-            About
-          </Link>
-          <Link to="/contact" className="block px-4 py-2 text-gray-600 hover:bg-gray-100" onClick={toggleMenu}>
-            Contact
-          </Link> */}
-
           {/* Sidebar Menu Items */}
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
-              <Link
-                to={getPath(item.name)}
+              <button
+                onClick={() => {
+                  navigate(getPath(item.name));
+                  setIsMenuOpen(false);
+                }}
                 key={item.name}
-                className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100"
-                onClick={toggleMenu}
+                className="flex items-center w-full px-4 py-2 text-gray-600 hover:bg-gray-100"
               >
                 <Icon size={20} className="mr-2" />
                 {item.name}
-              </Link>
+              </button>
             );
           })}
 
@@ -178,15 +138,17 @@ export default function Navbar() {
           {tools.map((item) => {
             const Icon = item.icon;
             return (
-              <Link
-                to={getPath(item.name)}
+              <button
+                onClick={() => {
+                  navigate(getPath(item.name));
+                  setIsMenuOpen(false);
+                }}
                 key={item.name}
-                className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100"
-                onClick={toggleMenu}
+                className="flex items-center w-full px-4 py-2 text-gray-600 hover:bg-gray-100"
               >
                 <Icon size={20} className="mr-2" />
                 {item.name}
-              </Link>
+              </button>
             );
           })}
         </div>
@@ -209,3 +171,4 @@ export default function Navbar() {
     </div>
   );
 }
+

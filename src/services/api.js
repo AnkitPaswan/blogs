@@ -83,4 +83,11 @@ export const postsAPI = {
   createPost: (postData) => api.post('/posts', postData),
   updatePost: (id, postData) => api.put(`/posts/${id}`, postData),
   deletePost: (id) => api.delete(`/posts/${id}`),
+  incrementView: (id) => api.post(`/posts/${id}/view`),
+};
+
+// Comments API
+export const commentsAPI = {
+  getComments: (postId) => api.get(`/comments/${postId}`),
+  addComment: (commentData) => api.post('/comments', commentData),
 };
