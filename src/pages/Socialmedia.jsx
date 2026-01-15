@@ -3,32 +3,19 @@ import { Link, useLocation } from "react-router-dom";
 import { ChevronLeft, ChevronRight, MessageCircle, Calendar, EyeIcon } from "lucide-react";
 import { fetchCategories, fetchPosts } from "../services/api";
 import ShareButton from "../utils/ShareButton";
-
-// Helper function to format date
-const formatDate = (dateString) => {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "";
-  
-  // Format: 13 Jan 2026
-  const day = date.getDate();
-  const month = date.toLocaleString("en-US", { month: "short" });
-  const year = date.getFullYear();
-  
-  return `${day} ${month} ${year}`;
-};
+import {SkeletonLoaderForHome} from "../utils/SkeletonLoader";
+import { formatDate } from "../utils/formatDate";
 
 const SocialMedia = () => {
-  const location = useLocation(); // ✅ Get current URL
+  const location = useLocation();
   const carouselRefs = useRef({});
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [categories, setCategories] = useState([]);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // const [commentCounts, setCommentCounts] = useState({});
 
-  // ✅ Scroll to top on navigation or category change
+  // Scroll to top on navigation or category change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [location.pathname, selectedCategory]);
@@ -51,24 +38,6 @@ const SocialMedia = () => {
         ]);
         setCategories(fetchedCategories.filter((cat) => cat !== "All"));
         setPosts(fetchedPosts);
-
-        // Fetch comment counts for each post
-        // const counts = {};
-        // await Promise.all(
-        //   fetchedPosts.map(async (post) => {
-        //     try {
-        //       const response = await commentsAPI.getComments(
-        //         post.id || post._id
-        //       );
-        //       counts[post.id || post._id] = response.data.length;
-        //     } catch (err) {
-        //       counts[post.id || post._id] = 0;
-        //       console.log(err);
-              
-        //     }
-        //   })
-        // );
-        // setCommentCounts(counts);
       } catch (err) {
         console.error("Failed to load data:", err);
         setError("Failed to load data. Please try again later.");
@@ -78,10 +47,6 @@ const SocialMedia = () => {
     };
     loadData();
   }, []);
-
-
-
-
 
   const scrollCarousel = (category, direction) => {
     const carouselElement = carouselRefs.current[category];
@@ -100,13 +65,11 @@ const SocialMedia = () => {
     const categoryPosts = posts.filter((post) => post.category === category);
     if (!categoryPosts.length) return new Date(0);
 
-    // Try to parse dates, if not available use post id as fallback (assuming higher id = newer)
     const dates = categoryPosts.map((post) => {
       if (post.date) {
         const parsed = new Date(post.date);
         if (!isNaN(parsed)) return parsed;
       }
-      // Fallback: use id as proxy for recency (higher id = newer)
       return new Date(post.id || 0);
     });
 
@@ -118,20 +81,95 @@ const SocialMedia = () => {
     return getLatestPostDate(b) - getLatestPostDate(a);
   });
 
+  // Post Card Component (same design as AllPosts)
+  const PostCard = ({ post }) => {
+    const postId = post.id || post._id;
+
+    return (
+      <Link
+        to={`/blog/${postId}`}
+        className="
+          group
+          bg-white
+          border border-gray-200
+          rounded-xl
+          p-4
+          shadow-sm
+          hover:shadow-xl
+          transition-all duration-300
+          flex flex-col
+          h-[260px]
+          w-full xs:w-[88vw] sm:w-72 md:w-80
+          flex-shrink-0
+        "
+      >
+        {/* Top Row: Image + Title */}
+        <div className="flex gap-4 mb-3">
+          {/* Thumbnail */}
+          {post.image ? (
+            <img
+              src={post.image}
+              alt="post"
+              className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-lg bg-gray-200 flex-shrink-0" />
+          )}
+
+          {/* Title + Category */}
+          <div className="flex flex-col">
+            <span className="text-xs font-medium text-blue-600 mb-1">
+              {post.category}
+            </span>
+            <h3 className="text-m font-semibold text-gray-900 group-hover:text-blue-600 transition line-clamp-2">
+              {post.title}
+            </h3>
+          </div>
+        </div>
+
+        {/* Caption / Excerpt */}
+        <p className="text-sm text-gray-600 line-clamp-3 mb-4">
+          {post.caption || post.content}
+        </p>
+
+        {/* Footer */}
+        <div className="mt-auto flex items-center justify-between pt-3 border-t">
+          <div className="flex items-center gap-4 text-gray-500 text-sm">
+            <span className="flex items-center gap-1">
+              <MessageCircle size={15} />
+              {post.commentCount}
+            </span>
+            <span className="flex items-center gap-1">
+              <EyeIcon size={15} />
+              {post.views}
+            </span>
+            <ShareButton
+              url={`/blog/${postId}`}
+              title={post.title}
+              className="hover:text-blue-600"
+            />
+          </div>
+          <span className="flex items-center gap-1 text-xs text-gray-400">
+            <Calendar size={13} />
+            {formatDate(post.createdAt)}
+          </span>
+        </div>
+      </Link>
+    );
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading post...</p>
-        </div>
-      </div>
+     <SkeletonLoaderForHome/>
     );
   }
-  if (error) return <p className="text-center text-red-500">{error}</p>;
+
+  if (error) {
+    return <div className="text-center py-10 text-red-500">{error}</div>;
+  }
 
   return (
-    <div className="p-4 md:p-10 rounded-xl bg-gray-50">
+    <div className="p-4 md:p-10 md:pt-0 rounded-xl bg-gray-50">
       <div className="pr-0 sm:pr-16 md:pr-10">
         <h2 className="text-2xl md:text-3xl font-bold mb-3 text-gray-800">
           Trending Social Updates by Category
@@ -151,100 +189,41 @@ const SocialMedia = () => {
               to="/allposts"
               className="text-indigo-600 text-sm font-medium hover:underline flex-shrink-0"
             >
-              View all →
+              <span className="flex items-center gap-1">
+              View all 
+              <ChevronRight size={15} />
+              </span>
             </Link>
           </div>
 
           {/* Carousel Wrapper */}
-          <div className="relative">
+          <div className="relative -ml-4 -mr-4 px-4 md:px-0 md:ml-0 md:mr-0">
             {/* Left Arrow */}
-            <button
-              onClick={() => scrollCarousel("trending", "left")}
-              className="absolute left-1 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition hidden sm:block"
-            >
-              <ChevronLeft size={22} />
-            </button>
+              <button
+                  onClick={() => scrollCarousel("trending", "left")}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
+                >
+                  <ChevronLeft size={22} />
+                </button>
 
-            {/* Right Arrow */}
-            <button
-              onClick={() => scrollCarousel("trending", "right")}
-              className="absolute right-1 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition hidden sm:block"
-            >
-              <ChevronRight size={22} />
-            </button>
+                {/* Right Arrow */}
+                <button
+                  onClick={() => scrollCarousel("trending", "right")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
+                >
+                  <ChevronRight size={22} />
+                </button>
 
             {/* Scrollable Area - Latest 10 posts */}
             <div
               ref={(el) => (carouselRefs.current["trending"] = el)}
               className="overflow-x-auto scrollbar-hide snap-x snap-mandatory"
             >
-              <div className="flex space-x-4 py-3">
+              <div className="flex gap-4 py-3 px-4 xs:px-0 snap-x snap-mandatory">
                 {posts.slice(0, 10).map((post) => (
-                  <Link
-                    key={post.id}
-                    to={`/blog/${post.id}`}
-                    className="
-                      w-[88vw] xs:w-[92vw]    
-                      sm:w-72 md:w-80                
-                      h-[400px]
-                      border rounded-md p-4 
-                      bg-white shadow-sm hover:shadow-xl 
-                      transition cursor-pointer 
-                      border-gray-200 flex-shrink-0 
-                      flex flex-col snap-start select-none
-                    "
-                  >
-                    {/* Title */}
-                    <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                      {post.title || post.content?.substring(0, 50) + "..."}
-                    </h3>
-
-                    {/* Content */}
-                    <p className="text-sm text-gray-600 whitespace-pre-line mb-3 line-clamp-3 flex-grow">
-                      {post.content}
-                    </p>
-
-                    {/* Image */}
-                    {post.image && (
-                      <img
-                        src={post.image}
-                        alt="post"
-                        className="w-full h-36 object-cover rounded-lg mb-3 border"
-                      />
-                    )}
-
-                    {/* Comment, Share Buttons and Date */}
-                    <div className="mt-auto flex items-center justify-between pt-2 border-t border-gray-100">
-                      <div className="flex items-center space-x-6">
-                        <Link
-                          to={`/blog/${post.id}`}
-                          className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors"
-                        >
-                          <MessageCircle className="text-gray-500" />
-                          <span className="text-sm">
-                            {post.commentCount}
-                            {/* {commentCounts[post.id || post._id] || 0} */}
-                          </span>
-                          <EyeIcon className="text-gray-500" />
-                          <span className="text-sm">
-                            {post.views}
-                          </span>
-                        </Link>
-                        <ShareButton
-                          url={`/blog/${post.id || post._id}`}
-                          title={
-                            post.title || post.content?.substring(0, 50) + "..."
-                          }
-                          // showLabel={false}
-                          className="text-gray-500 hover:text-blue-600"
-                        />
-                      </div>
-                      <div className="flex items-center space-x-1 text-gray-400 text-xs">
-                        <Calendar className="w-3 h-3" />
-                        <span>{formatDate(post.createdAt)}</span>
-                      </div>
-                    </div>
-                  </Link>
+                  <div key={post.id} className="snap-center flex-shrink-0 w-full xs:w-[88vw] sm:w-72 md:w-80">
+                    <PostCard post={post} />
+                  </div>
                 ))}
               </div>
             </div>
@@ -268,16 +247,19 @@ const SocialMedia = () => {
                   to={`/allposts?category=${category}`}
                   className="text-indigo-600 text-sm font-medium hover:underline flex-shrink-0"
                 >
-                  View all →
+                  <span className="flex items-center gap-1">
+              View all 
+              <ChevronRight size={15} />
+              </span>
                 </Link>
               </div>
 
               {/* Carousel Wrapper */}
-              <div className="relative">
+              <div className="relative -ml-4 -mr-4 px-4 md:px-0 md:ml-0 md:mr-0">
                 {/* Left Arrow */}
-                <button
+              <button
                   onClick={() => scrollCarousel(category, "left")}
-                  className="absolute left-1 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition hidden sm:block"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
                 >
                   <ChevronLeft size={22} />
                 </button>
@@ -285,7 +267,7 @@ const SocialMedia = () => {
                 {/* Right Arrow */}
                 <button
                   onClick={() => scrollCarousel(category, "right")}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition hidden sm:block"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
                 >
                   <ChevronRight size={22} />
                 </button>
@@ -295,74 +277,11 @@ const SocialMedia = () => {
                   ref={(el) => (carouselRefs.current[category] = el)}
                   className="overflow-x-auto scrollbar-hide snap-x snap-mandatory"
                 >
-                  <div className="flex space-x-4 py-3">
+                  <div className="flex gap-4 py-3 px-4 xs:px-0 snap-x snap-mandatory">
                     {categoryPosts.map((post) => (
-                      <Link
-                        key={post.id}
-                        to={`/blog/${post.id}`}
-                        className="
-                          w-[88vw] xs:w-[92vw]    
-                          sm:w-72 md:w-80                
-                          h-[400px]
-                          border rounded-md p-4 
-                          bg-white shadow-sm hover:shadow-xl 
-                          transition cursor-pointer 
-                          border-gray-200 flex-shrink-0 
-                          flex flex-col snap-start select-none
-                        "
-                      >
-                        {/* Title */}
-                        <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                          {post.title || post.content?.substring(0, 50) + "..."}
-                        </h3>
-
-                        {/* Content */}
-                        <p className="text-sm text-gray-600 whitespace-pre-line mb-3 line-clamp-3 flex-grow">
-                          {post.content}
-                        </p>
-
-                        {/* Image */}
-                        {post.image && (
-                          <img
-                            src={post.image}
-                            alt="post"
-                            className="w-full h-36 object-cover rounded-lg mb-3 border"
-                          />
-                        )}
-
-                        {/* Comment, Share Buttons and Date */}
-                        <div className="mt-auto flex items-center justify-between pt-2 border-t border-gray-100">
-                          <div className="flex items-center space-x-6">
-                            <Link
-                              to={`/blog/${post.id}`}
-                              className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors"
-                            >
-                              <MessageCircle className="text-gray-500" />
-                              <span className="text-sm">
-                                {post.commentCount}
-                                {/* {commentCounts[post.id || post._id] || 0} */}
-                              </span>
-                            </Link>
-                            <div className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors">
-                              <EyeIcon className="text-gray-500" />
-                              <span className="text-sm">{post.views}</span>
-                            </div>
-                            <ShareButton
-                              url={`/blog/${post.id || post._id}`}
-                              title={
-                                post.title ||
-                                post.content?.substring(0, 50) + "..."
-                              }
-                              // showLabel={false}
-                              className="text-gray-500 hover:text-blue-600"
-                            />
-                          </div>
-                          <div className="flex items-center space-x-1 text-gray-400 text-xs">
-                            <Calendar className="w-3 h-3" />
-                            <span>{formatDate(post.createdAt)}</span>
-                          </div>
-                        </div>
-                      </Link>
+                      <div key={post.id} className="snap-center flex-shrink-0 w-full xs:w-[88vw] sm:w-72 md:w-80">
+                        <PostCard post={post} />
+                      </div>
                     ))}
                   </div>
                 </div>

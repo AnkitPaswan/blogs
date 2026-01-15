@@ -84,6 +84,7 @@ export const postsAPI = {
   updatePost: (id, postData) => api.put(`/posts/${id}`, postData),
   deletePost: (id) => api.delete(`/posts/${id}`),
   incrementView: (id) => api.post(`/posts/${id}/view`),
+  getDashboardStats: () => api.get('/posts/dashboard'),
 };
 
 // Comments API

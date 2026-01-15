@@ -66,10 +66,10 @@ export default function Sidebar({ active, setActive }) {
           <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-4">
             System
           </h3>
-          <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-200 group mb-2">
+          {/* <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-200 group mb-2">
             <Settings className="w-5 h-5 text-slate-400 group-hover:text-blue-400 transition-colors" />
             <span className="font-medium">Settings</span>
-          </button>
+          </button> */}
 
           <button
             onClick={handleLogout}

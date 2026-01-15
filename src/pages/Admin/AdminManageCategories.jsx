@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Plus, Edit, Trash2, Tag, Filter } from "lucide-react";
 import { categoryAPI } from "../../services/categoryAPI";
 import CategoryModal from "../../components/Admin/CategoryModal";
+import {SkeletonLoaderForCategory} from "../../utils/SkeletonLoader";
+import { formatDate } from "../../utils/formatDate";
 
 export default function ManageCategories() {
   const [categories, setCategories] = useState([]);
@@ -145,7 +147,7 @@ export default function ManageCategories() {
       </div>
 
       {/* Categories Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
         {filteredCategories.map((category) => (
           <div key={category._id} className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             {/* Category Header */}
@@ -157,7 +159,7 @@ export default function ManageCategories() {
                 <div>
                   <h3 className="font-semibold text-white text-lg">{category.name}</h3>
                   <p className="text-green-100 text-sm">
-                    Created: {new Date(category.createdAt).toLocaleDateString()}
+                    Created: {formatDate(category.createdAt)}
                   </p>
                 </div>
               </div>
@@ -173,14 +175,14 @@ export default function ManageCategories() {
               <div className="flex space-x-2">
                 <button
                   onClick={() => handleEdit(category)}
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-md py-1.5 hover:bg-blue-100 transition"
                 >
                   <Edit className="w-4 h-4" />
                   <span>Edit</span>
                 </button>
                 <button
                   onClick={() => handleDelete(category._id)}
-                  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-2 px-4 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-medium text-red-600 bg-red-50 rounded-md py-1.5 hover:bg-red-100 transition"
                 >
                   <Trash2 className="w-4 h-4" />
                   <span>Delete</span>
@@ -207,12 +209,10 @@ export default function ManageCategories() {
         </div>
       )}
 
+
       {/* Loading State */}
       {loading && (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading categories...</p>
-        </div>
+       <SkeletonLoaderForCategory/>
       )}
 
       {/* Modal */}

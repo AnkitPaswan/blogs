@@ -12,24 +12,26 @@ export default function Navbar() {
   // Define the sidebar menu items and tools
   const menuItems = [
     { name: "Home", icon: HomeIcon },
-    { name: "Ideas Dashboard", icon: BarChart3 },
-    { name: "Results", icon: FileText },
-    { name: "Timeline", icon: Clock },
-    { name: "Watchlist", icon: Bookmark },
-    { name: "Portfolio", icon: Briefcase },
-    { name: "Alerts", icon: Bell },
-    { name: "Dashboard", icon: LayoutDashboardIcon },
+    { name: "About", icon: FileText },
+    // { name: "Ideas Dashboard", icon: BarChart3 },
+    // { name: "Results", icon: FileText },
+    // { name: "Timeline", icon: Clock },
+    // { name: "Watchlist", icon: Bookmark },
+    // { name: "Portfolio", icon: Briefcase },
+    // { name: "Alerts", icon: Bell },
+    // { name: "Dashboard", icon: LayoutDashboardIcon },
   ];
 
-  const tools = [
-    { name: "Stock Screener", icon: Sliders },
-    { name: "Market", icon: Dices },
-    { name: "Raw Material", icon: Package },
-  ];
+  // const tools = [
+  //   { name: "Stock Screener", icon: Sliders },
+  //   { name: "Market", icon: Dices },
+  //   { name: "Raw Material", icon: Package },
+  // ];
 
   // Helper function to generate the correct URL path
   const getPath = (name) => {
     if (name === "Home") return "/";
+    if (name === "About") return "/about";
     if (name === "Dashboard") return "/dashboard";
     return "/working";
   };
@@ -134,7 +136,7 @@ export default function Navbar() {
           })}
 
           {/* Tools */}
-          <div className="border-t" />
+          {/* <div className="border-t" />
           {tools.map((item) => {
             const Icon = item.icon;
             return (
@@ -150,7 +152,7 @@ export default function Navbar() {
                 {item.name}
               </button>
             );
-          })}
+          })} */}
         </div>
       )}
 

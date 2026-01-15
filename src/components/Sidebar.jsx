@@ -13,6 +13,7 @@ const UNDER_CONSTRUCTION_PATH = "/working";
 // Helper function to generate the correct URL path
 const getPath = (name) => {
     if (name === "Home") return "/";
+    if (name === "About") return "/about";
 
     if (name === "Dashboard") return "/dashboard";
 
@@ -24,20 +25,21 @@ export default function Sidebar() {
 
   const menuItems = [
     { name: "Home", icon: HomeIcon },
-    { name: "Ideas Dashboard", icon: BarChart3 },
-    { name: "Results", icon: FileText },
-    { name: "Timeline", icon: Clock },
-    { name: "Watchlist", icon: Bookmark },
-    { name: "Portfolio", icon: Briefcase },
-    { name: "Alerts", icon: Bell },
-    { name: "Dashboard", icon: LayoutDashboardIcon },
+    { name: "About", icon: FileText },
+    // { name: "Ideas Dashboard", icon: BarChart3 },
+    // { name: "Results", icon: FileText },
+    // { name: "Timeline", icon: Clock },
+    // { name: "Watchlist", icon: Bookmark },
+    // { name: "Portfolio", icon: Briefcase },
+    // { name: "Alerts", icon: Bell },
+    // { name: "Dashboard", icon: LayoutDashboardIcon },
   ];
 
-  const tools = [
-    { name: "Stock Screener", icon: Sliders },
-    { name: "Market", icon: Dices },
-    { name: "Raw Material", icon: Package },
-  ];
+  // const tools = [
+  //   { name: "Stock Screener", icon: Sliders },
+  //   { name: "Market", icon: Dices },
+  //   { name: "Raw Material", icon: Package },
+  // ];
 
   // 4. Function to handle the click and set the active state
   const handleItemClick = (name) => {
@@ -50,7 +52,7 @@ export default function Sidebar() {
     <div className="hidden md:block fixed right-0 top-[88px] bottom-0 w-16 md:w-20 bg-white border-l shadow-sm flex flex-col justify-between z-40">
 
       {/* Top Menu Items Section */}
-      <div className="flex flex-col items-center pt-5">
+      <div className="flex flex-col items-center pt-8">
         {menuItems.map((item) => {
           const Icon = item.icon;
 
@@ -83,7 +85,7 @@ export default function Sidebar() {
       <div
         className="flex flex-col items-center pb-[60px] md:pb-12"
       >
-        <div className="border-t w-full mb-1" />
+        {/* <div className="border-t w-full mb-1" />
         {tools.map((item) => {
           const Icon = item.icon;
           const isActive = active === item.name;
@@ -108,7 +110,7 @@ export default function Sidebar() {
               <span className="text-center text-[8px] leading-tight">{item.name}</span>
             </Link>
           );
-        })}
+        })} */}
       </div>
     </div>
   );
