@@ -103,6 +103,15 @@ export default function ManageCategories() {
     setShowModal(true);
   };
 
+  const handleNewCategory = () => {
+    setNewCategory({
+      name: "",
+      description: "",
+    });
+    setEditCategoryId(null);
+    setShowModal(true);
+  };
+
   return (
     <div className="relative h-full">
       {/* Header */}
@@ -136,7 +145,7 @@ export default function ManageCategories() {
 
             {/* New Category Button */}
             <button
-              onClick={() => setShowModal(true)}
+              onClick={handleNewCategory}
               className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-2 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               <Plus className="w-4 h-4" />
@@ -200,7 +209,7 @@ export default function ManageCategories() {
           <h3 className="text-lg font-medium text-gray-600 mb-2">No categories yet</h3>
           <p className="text-gray-500 mb-6">Get started by creating your first category</p>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={handleNewCategory}
             className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 mx-auto"
           >
             <Plus className="w-5 h-5" />

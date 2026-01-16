@@ -8,6 +8,7 @@ import {
 import { postsAPI, commentsAPI } from "../services/api";
 import ShareButton from "../utils/ShareButton";
 import { SkeletonLoaderForPostDetails } from "../utils/SkeletonLoader";
+import notFoundImage from "/assets/notfound.webp";
 
 export default function BlogDetail() {
   const { id } = useParams();
@@ -151,6 +152,9 @@ export default function BlogDetail() {
               <img
                 src={post.image}
                 alt="Post"
+                  onError={(e) => {
+    e.currentTarget.src = notFoundImage;
+  }}
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-4 left-4">
@@ -165,7 +169,7 @@ export default function BlogDetail() {
           <div className="p-6 md:p-8">
             {/* Post Text - Rendered from TipTap HTML content */}
             <div
-              className="prose prose-lg max-w-none mb-6"
+              className="prose prose-lg max-w-none mb-6 prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
 

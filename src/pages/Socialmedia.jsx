@@ -1,10 +1,18 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronLeft, ChevronRight, MessageCircle, Calendar, EyeIcon } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  MessageCircle,
+  Calendar,
+  EyeIcon,
+} from "lucide-react";
 import { fetchCategories, fetchPosts } from "../services/api";
 import ShareButton from "../utils/ShareButton";
-import {SkeletonLoaderForHome} from "../utils/SkeletonLoader";
+import { SkeletonLoaderForHome } from "../utils/SkeletonLoader";
 import { formatDate } from "../utils/formatDate";
+import DOMPurify from "dompurify";
+import notFoundImage from "/assets/notfound.webp";
 
 const SocialMedia = () => {
   const location = useLocation();
@@ -29,23 +37,28 @@ const SocialMedia = () => {
     }
   }, [categoryFromURL]);
 
+  const loadData = async () => {
+    try {
+      const [fetchedCategories, fetchedPosts] = await Promise.all([
+        fetchCategories(),
+        fetchPosts("All"),
+      ]);
+      setCategories(fetchedCategories.filter((cat) => cat !== "All"));
+      setPosts(fetchedPosts);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to load data:", err);
+      setError("Failed to load data. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [fetchedCategories, fetchedPosts] = await Promise.all([
-          fetchCategories(),
-          fetchPosts("All"),
-        ]);
-        setCategories(fetchedCategories.filter((cat) => cat !== "All"));
-        setPosts(fetchedPosts);
-      } catch (err) {
-        console.error("Failed to load data:", err);
-        setError("Failed to load data. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
     loadData();
+    // Auto-refresh blogs every 15 minutes (900000 ms)
+    const intervalId = setInterval(loadData, 15 * 60 * 1000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const scrollCarousel = (category, direction) => {
@@ -108,8 +121,11 @@ const SocialMedia = () => {
           {/* Thumbnail */}
           {post.image ? (
             <img
-              src={post.image}
+              src={post.image || notFoundImage}
               alt="post"
+              onError={(e) => {
+                e.currentTarget.src = notFoundImage;
+              }}
               className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border"
             />
           ) : (
@@ -128,9 +144,16 @@ const SocialMedia = () => {
         </div>
 
         {/* Caption / Excerpt */}
-        <p className="text-sm text-gray-600 line-clamp-3 mb-4">
+        {/* <p className="text-sm text-gray-600 line-clamp-3 mb-4">
           {post.caption || post.content}
-        </p>
+        </p> */}
+
+        <div
+          className="text-sm text-gray-600 line-clamp-3 mb-4 prose prose-sm max-w-none prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800"
+          dangerouslySetInnerHTML={{
+            __html: DOMPurify.sanitize(post.content || post.caption),
+          }}
+        />
 
         {/* Footer */}
         <div className="mt-auto flex items-center justify-between pt-3 border-t">
@@ -159,9 +182,7 @@ const SocialMedia = () => {
   };
 
   if (loading) {
-    return (
-     <SkeletonLoaderForHome/>
-    );
+    return <SkeletonLoaderForHome />;
   }
 
   if (error) {
@@ -190,8 +211,8 @@ const SocialMedia = () => {
               className="text-indigo-600 text-sm font-medium hover:underline flex-shrink-0"
             >
               <span className="flex items-center gap-1">
-              View all 
-              <ChevronRight size={15} />
+                View all
+                <ChevronRight size={15} />
               </span>
             </Link>
           </div>
@@ -199,20 +220,20 @@ const SocialMedia = () => {
           {/* Carousel Wrapper */}
           <div className="relative -ml-4 -mr-4 px-4 md:px-0 md:ml-0 md:mr-0">
             {/* Left Arrow */}
-              <button
-                  onClick={() => scrollCarousel("trending", "left")}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
-                >
-                  <ChevronLeft size={22} />
-                </button>
+            <button
+              onClick={() => scrollCarousel("trending", "left")}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
+            >
+              <ChevronLeft size={22} />
+            </button>
 
-                {/* Right Arrow */}
-                <button
-                  onClick={() => scrollCarousel("trending", "right")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
-                >
-                  <ChevronRight size={22} />
-                </button>
+            {/* Right Arrow */}
+            <button
+              onClick={() => scrollCarousel("trending", "right")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
+            >
+              <ChevronRight size={22} />
+            </button>
 
             {/* Scrollable Area - Latest 10 posts */}
             <div
@@ -221,7 +242,10 @@ const SocialMedia = () => {
             >
               <div className="flex gap-4 py-3 px-4 xs:px-0 snap-x snap-mandatory">
                 {posts.slice(0, 10).map((post) => (
-                  <div key={post.id} className="snap-center flex-shrink-0 w-full xs:w-[88vw] sm:w-72 md:w-80">
+                  <div
+                    key={post.id}
+                    className="snap-center flex-shrink-0 w-full xs:w-[88vw] sm:w-72 md:w-80"
+                  >
                     <PostCard post={post} />
                   </div>
                 ))}
@@ -248,16 +272,16 @@ const SocialMedia = () => {
                   className="text-indigo-600 text-sm font-medium hover:underline flex-shrink-0"
                 >
                   <span className="flex items-center gap-1">
-              View all 
-              <ChevronRight size={15} />
-              </span>
+                    View all
+                    <ChevronRight size={15} />
+                  </span>
                 </Link>
               </div>
 
               {/* Carousel Wrapper */}
               <div className="relative -ml-4 -mr-4 px-4 md:px-0 md:ml-0 md:mr-0">
                 {/* Left Arrow */}
-              <button
+                <button
                   onClick={() => scrollCarousel(category, "left")}
                   className="absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
                 >
@@ -279,7 +303,10 @@ const SocialMedia = () => {
                 >
                   <div className="flex gap-4 py-3 px-4 xs:px-0 snap-x snap-mandatory">
                     {categoryPosts.map((post) => (
-                      <div key={post.id} className="snap-center flex-shrink-0 w-full xs:w-[88vw] sm:w-72 md:w-80">
+                      <div
+                        key={post.id}
+                        className="snap-center flex-shrink-0 w-full xs:w-[88vw] sm:w-72 md:w-80"
+                      >
                         <PostCard post={post} />
                       </div>
                     ))}
@@ -295,4 +322,3 @@ const SocialMedia = () => {
 };
 
 export default SocialMedia;
-

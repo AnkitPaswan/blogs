@@ -4,11 +4,6 @@ import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
 import TextAlign from '@tiptap/extension-text-align'
-import Heading from '@tiptap/extension-heading'
-import ListItem from '@tiptap/extension-list-item'
-import BulletList from '@tiptap/extension-bullet-list'
-import OrderedList from '@tiptap/extension-ordered-list'
-import Blockquote from '@tiptap/extension-blockquote'
 
 import {
   Bold,
@@ -44,13 +39,6 @@ export default function TiptapEditor({ value, onChange }) {
     extensions: [
       StarterKit,
       Underline,
-      Heading.configure({
-        levels: [1, 2],
-      }),
-      ListItem,
-      BulletList,
-      OrderedList,
-      Blockquote,
       Link.configure({
         openOnClick: false,
         autolink: true,
@@ -68,12 +56,14 @@ export default function TiptapEditor({ value, onChange }) {
     onUpdate: ({ editor }) => {
       onChange?.(editor.getHTML())
     },
-    editorProps: {
-      attributes: {
-        class:
-          'prose prose-sm max-w-none focus:outline-none min-h-[160px] p-4',
-      },
-    },
+  editorProps: {
+  attributes: {
+    class:
+      'prose prose-sm max-w-none min-h-[160px] p-4 focus:outline-none ' +
+      'prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800',
+  },
+},
+
   })
 
   if (!editor) return null

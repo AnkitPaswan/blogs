@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import PostsModal from "../../components/Admin/PostsModal";
 import { formatDate } from "../../utils/formatDate";
+import notFoundImage from "/assets/notfound.webp";
 
 export default function ManagePostsView({
   showModal,
@@ -157,8 +158,11 @@ export default function ManagePostsView({
               {post.image && (
                 <div className="relative h-24 overflow-hidden">
                   <img
-                    src={post.image}
+                    src={post.image || notFoundImage}
                     alt={post.title}
+                    onError={(e) => {
+                      e.currentTarget.src = notFoundImage;
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
 

@@ -4,7 +4,9 @@ import { MessageCircle, Calendar, EyeIcon } from "lucide-react";
 import ShareButton from "../utils/ShareButton";
 import useAllPosts from "../hooks/useAllPosts";
 import { formatDate } from "../utils/formatDate";
-import {SkeletonLoader} from "../utils/SkeletonLoader";
+import { SkeletonLoader } from "../utils/SkeletonLoader";
+import notFoundImage from "/assets/notfound.webp";
+import DOMPurify from "dompurify";
 
 export default function AllPosts() {
   const location = useLocation();
@@ -70,9 +72,7 @@ export default function AllPosts() {
         )}
 
         {/* Error */}
-        {error && (
-          <div className="text-center py-10 text-red-500">{error}</div>
-        )}
+        {error && <div className="text-center py-10 text-red-500">{error}</div>}
 
         {/* Posts Grid */}
         {!loading && !error && (
@@ -90,8 +90,11 @@ export default function AllPosts() {
                       {/* Thumbnail */}
                       {post.image ? (
                         <img
-                          src={post.image}
-                          alt="post"
+                          src={post.image || notFoundImage}
+                          alt={"post"}
+                          onError={(e) => {
+                            e.currentTarget.src = notFoundImage;
+                          }}
                           className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border"
                         />
                       ) : (
@@ -104,16 +107,24 @@ export default function AllPosts() {
                           {post.category}
                         </span>
 
-                        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition line-clamp-2">
+                        <h3 className="text-m font-semibold text-gray-900 group-hover:text-blue-600 transition line-clamp-2">
                           {post.title}
                         </h3>
                       </div>
                     </div>
 
                     {/* Caption / Excerpt */}
-                    <p className="text-sm text-gray-600 line-clamp-3 mb-4">
+                    {/* <p className="text-sm text-gray-600 line-clamp-3 mb-4">
                       {post.caption || post.content}
-                    </p>
+                    </p> */}
+                    <div
+                      className="text-sm text-gray-600 line-clamp-3 mb-4 prose prose-sm max-w-none prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800"
+                      dangerouslySetInnerHTML={{
+                        __html: DOMPurify.sanitize(
+                          post.content || post.caption
+                        ),
+                      }}
+                    />
 
                     {/* Footer */}
                     <div className="mt-auto flex items-center justify-between pt-3 border-t">
@@ -154,4 +165,3 @@ export default function AllPosts() {
     </div>
   );
 }
-
