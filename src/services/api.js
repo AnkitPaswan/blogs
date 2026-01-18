@@ -12,13 +12,24 @@ export const authAPI = {
   register: (userData) => api.post('/auth/register', userData),
 };
 
-// Fetch all posts with optional category filter
-export const fetchPosts = async (category = 'All') => {
+// Fetch all posts with optional category filter and pagination
+export const fetchPosts = async (category = 'All', limit = 8, cursor = null, id = null) => {
   try {
-    const url =
-      category === 'All'
-        ? `${API_URL}/posts`
-        : `${API_URL}/posts?category=${encodeURIComponent(category)}`;
+    const params = new URLSearchParams();
+    
+    // Always add limit
+    params.append('limit', limit.toString());
+    
+    // Add cursor and id for pagination (if provided)
+    if (cursor) params.append('cursor', cursor);
+    if (id) params.append('id', id);
+    
+    // Add category filter
+    if (category !== 'All') {
+      params.append('category', encodeURIComponent(category));
+    }
+
+    const url = `${API_URL}/posts?${params.toString()}`;
 
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -26,6 +37,19 @@ export const fetchPosts = async (category = 'All') => {
     return await response.json();
   } catch (error) {
     console.error('Error fetching posts:', error);
+    throw error;
+  }
+};
+
+// Fetch home posts (grouped by category) from the home API
+export const fetchHomePosts = async () => {
+  try {
+    const response = await fetch(`${API_URL}/posts/home`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching home posts:', error);
     throw error;
   }
 };
@@ -66,23 +90,64 @@ export const searchPosts = async (term) => {
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-    return await response.json();
+    const data = await response.json();
+    // Return full response with posts array for pagination support
+    return {
+      posts: data.posts || data,
+      nextCursor: data.nextCursor || null,
+      nextId: data.nextId || null,
+      hasMore: data.hasMore || false
+    };
   } catch (error) {
     console.error('Error searching posts:', error);
     throw error;
   }
 };
 
-// Export postsAPI object to match original import expectation
+
+// Export postsAPI object with consistent response handling
 export const postsAPI = {
-  getPosts: async (category = 'All') => ({
-    data: await fetchPosts(category),
-  }),
+  getPosts: async (category = 'All', limit = 8, cursor = null, id = null) => {
+    const data = await fetchPosts(category, limit, cursor, id);
+    return { data };
+  },
   getPost: (id) => api.get(`/posts/${id}`),
-   searchPosts: (term) => api.get(`/posts/search/${encodeURIComponent(term)}`),
-  createPost: (postData) => api.post('/posts', postData),
-  updatePost: (id, postData) => api.put(`/posts/${id}`, postData),
-  deletePost: (id) => api.delete(`/posts/${id}`),
+  // Search posts with pagination support
+  searchPosts: async (term, limit = 8, cursor = null, id = null) => {
+    try {
+      const params = new URLSearchParams();
+      params.append('limit', limit.toString());
+      if (cursor) params.append('cursor', cursor);
+      if (id) params.append('id', id);
+      
+      const url = `${API_URL}/posts/search/${encodeURIComponent(term)}?${params.toString()}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      // Return full response with posts array for convenience
+      return { 
+        data: {
+          ...data,  // Keep nextCursor, nextId, hasMore
+          posts: data.posts || data  // Also include posts for easy access
+        }
+      };
+    } catch (error) {
+      console.error('Error searching posts:', error);
+      throw error;
+    }
+  },
+  createPost: async (postData) => {
+    const response = await api.post('/posts', postData);
+    return { data: response.data };
+  },
+  updatePost: async (id, postData) => {
+    const response = await api.put(`/posts/${id}`, postData);
+    return { data: response.data };
+  },
+  deletePost: async (id) => {
+    const response = await api.delete(`/posts/${id}`);
+    return { data: response.data };
+  },
   incrementView: (id) => api.post(`/posts/${id}/view`),
   getDashboardStats: () => api.get('/posts/dashboard'),
 };
@@ -92,3 +157,4 @@ export const commentsAPI = {
   getComments: (postId) => api.get(`/comments/${postId}`),
   addComment: (commentData) => api.post('/comments', commentData),
 };
+

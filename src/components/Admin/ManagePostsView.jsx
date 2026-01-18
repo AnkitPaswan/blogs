@@ -4,15 +4,14 @@ import {
   Edit,
   Trash2,
   FileText,
-  Calendar,
-  MessageCircle,
-  Tag,
   Search,
   Filter,
+  Loader2,
 } from "lucide-react";
 import PostsModal from "../../components/Admin/PostsModal";
 import { formatDate } from "../../utils/formatDate";
 import notFoundImage from "/assets/notfound.webp";
+import { SkeletonLoaderForPosts } from "../../utils/SkeletonLoader";
 
 export default function ManagePostsView({
   showModal,
@@ -26,12 +25,16 @@ export default function ManagePostsView({
   setSearchQuery,
   selectedCategory,
   setSelectedCategory,
-  isSearching,
-  displayPosts,
+  posts,
   handleEdit,
   handleDelete,
   handleClearFilters,
   handleAddOrEditPost,
+  loading,
+  hasMore,
+  isLoadingMore,
+  observerTarget,
+  isSearching,
 }) {
   return (
     <div className="relative h-full">
@@ -139,78 +142,107 @@ export default function ManagePostsView({
       </div>
 
       {/* Loading State */}
-      {isSearching && (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Searching...</p>
-        </div>
-      )}
+      {loading ? (
+        <SkeletonLoaderForPosts />
+      ) : posts.length > 0 ? (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
+            {posts.map((post) => (
+              <div
+                key={post.id}
+                className="group bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition"
+              >
+                {/* Image */}
+                {post.image && (
+                  <div className="relative h-24 overflow-hidden">
+                    <img
+                      src={post.image || notFoundImage}
+                      alt={post.title}
+                      onError={(e) => {
+                        e.currentTarget.src = notFoundImage;
+                      }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
 
-      {/* Posts Grid */}
-      {!isSearching && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
-          {displayPosts.map((post) => (
-            <div
-              key={post.id}
-              className="group bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition"
-            >
-              {/* Image */}
-              {post.image && (
-                <div className="relative h-24 overflow-hidden">
-                  <img
-                    src={post.image || notFoundImage}
-                    alt={post.title}
-                    onError={(e) => {
-                      e.currentTarget.src = notFoundImage;
-                    }}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+                    {/* Category */}
+                    <span className="absolute top-2 left-2 bg-white/80 text-gray-800 text-[11px] px-2 py-0.5 rounded-full backdrop-blur shadow-sm">
+                      {post.category}
+                    </span>
+                  </div>
+                )}
 
-                  {/* Category */}
-                  <span className="absolute top-2 left-2 bg-white/80 text-gray-800 text-[11px] px-2 py-0.5 rounded-full backdrop-blur shadow-sm">
-                    {post.category}
-                  </span>
-                </div>
-              )}
+                {/* Content */}
+                <div className="p-3">
+                  {/* Title */}
+                  <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 mb-1">
+                    {post.title}
+                  </h3>
 
-              {/* Content */}
-              <div className="p-3">
-                {/* Title */}
-                <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 mb-1">
-                  {post.title}
-                </h3>
+                  {/* Date */}
+                  <p className="text-[11px] text-gray-500 mb-3">
+                    {formatDate(post.createdAt)}
+                  </p>
 
-                {/* Date */}
-                <p className="text-[11px] text-gray-500 mb-3">
-                  {formatDate(post.createdAt)}
-                </p>
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(post)}
+                      className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-md py-1.5 hover:bg-blue-100 transition"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                      Edit
+                    </button>
 
-                {/* Actions */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleEdit(post)}
-                    className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-md py-1.5 hover:bg-blue-100 transition"
-                  >
-                    <Edit className="w-3.5 h-3.5" />
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(post.id)}
-                    className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-medium text-red-600 bg-red-50 rounded-md py-1.5 hover:bg-red-100 transition"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Delete
-                  </button>
+                    <button
+                      onClick={() => handleDelete(post.id)}
+                      className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-medium text-red-600 bg-red-50 rounded-md py-1.5 hover:bg-red-100 transition"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
 
-      {/* Empty State */}
-      {!isSearching && displayPosts.length === 0 && (
+          {/* Infinite Scroll Trigger & Loading State */}
+          <div
+            ref={observerTarget}
+            className="mt-6 flex flex-col items-center justify-center"
+          >
+            {/* Loading more indicator */}
+            {isLoadingMore && (
+              <div className="flex items-center gap-2 text-gray-500">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Loading more posts...</span>
+              </div>
+            )}
+
+            {/* Searching indicator */}
+            {isSearching && isLoadingMore && posts.length === 0 && (
+              <div className="flex items-center gap-2 text-gray-500">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Searching posts...</span>
+              </div>
+            )}
+
+            {/* End of posts message */}
+            {!hasMore && posts.length > 0 && !isSearching && (
+              <p className="text-gray-400 text-sm">
+                You've reached the end of the posts
+              </p>
+            )}
+
+            {/* No more results for search */}
+            {!hasMore && posts.length > 0 && isSearching && (
+              <p className="text-gray-400 text-sm">
+                No more results found for "{searchQuery}"
+              </p>
+            )}
+          </div>
+        </>
+      ) : (
         <div className="text-center py-12">
           <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-600 mb-2">
@@ -267,3 +299,4 @@ export default function ManagePostsView({
     </div>
   );
 }
+

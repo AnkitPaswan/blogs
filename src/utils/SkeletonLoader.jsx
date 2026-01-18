@@ -168,3 +168,33 @@ export function SkeletonLoaderForCategory(){
         </div>
   )
 };
+
+
+export function SkeletonLoaderForPosts(){
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div
+          key={i}
+          className="group bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl overflow-hidden shadow-sm animate-pulse"
+        >
+          {/* Image Skeleton */}
+          <div className="relative h-24 overflow-hidden bg-gray-200" />
+
+          {/* Content */}
+          <div className="p-3">
+            {/* Title Skeleton */}
+            <div className="h-5 w-3/4 bg-gray-200 rounded mb-1" />
+            <div className="h-4 w-1/2 bg-gray-200 rounded mb-3" />
+
+            {/* Actions Skeleton */}
+            <div className="flex gap-2">
+              <div className="flex-1 h-8 bg-gray-200 rounded-md" />
+              <div className="flex-1 h-8 bg-gray-200 rounded-md" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};

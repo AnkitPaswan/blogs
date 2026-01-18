@@ -7,7 +7,7 @@ import {
   Calendar,
   EyeIcon,
 } from "lucide-react";
-import { fetchCategories, fetchPosts } from "../services/api";
+import { fetchHomePosts } from "../services/api";
 import ShareButton from "../utils/ShareButton";
 import { SkeletonLoaderForHome } from "../utils/SkeletonLoader";
 import { formatDate } from "../utils/formatDate";
@@ -39,12 +39,18 @@ const SocialMedia = () => {
 
   const loadData = async () => {
     try {
-      const [fetchedCategories, fetchedPosts] = await Promise.all([
-        fetchCategories(),
-        fetchPosts("All"),
-      ]);
-      setCategories(fetchedCategories.filter((cat) => cat !== "All"));
-      setPosts(fetchedPosts);
+      const response = await fetchHomePosts();
+      
+      if (response.success && response.data) {
+        const categoriesFromAPI = Object.keys(response.data);
+        setCategories(categoriesFromAPI);
+        
+        // Flatten all posts from all categories and sort by createdAt (newest first)
+        const allPosts = Object.values(response.data)
+          .flat()
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setPosts(allPosts);
+      }
       setError(null);
     } catch (err) {
       console.error("Failed to load data:", err);
@@ -75,19 +81,16 @@ const SocialMedia = () => {
 
   // Get the latest post date for each category
   const getLatestPostDate = (category) => {
-    const categoryPosts = posts.filter((post) => post.category === category);
-    if (!categoryPosts.length) return new Date(0);
+  if (!Array.isArray(posts)) return new Date(0);
 
-    const dates = categoryPosts.map((post) => {
-      if (post.date) {
-        const parsed = new Date(post.date);
-        if (!isNaN(parsed)) return parsed;
-      }
-      return new Date(post.id || 0);
-    });
+  const filtered = posts.filter(p => p?.category === category);
+  if (!filtered.length) return new Date(0);
 
-    return new Date(Math.max(...dates));
-  };
+  return new Date(
+    Math.max(...filtered.map(p => new Date(p.createdAt).getTime()))
+  );
+};
+
 
   // Sort categories by latest post date (most recent first)
   const sortedCategories = [...categories].sort((a, b) => {
@@ -241,7 +244,7 @@ const SocialMedia = () => {
               className="overflow-x-auto scrollbar-hide snap-x snap-mandatory"
             >
               <div className="flex gap-4 py-3 px-4 xs:px-0 snap-x snap-mandatory">
-                {posts.slice(0, 10).map((post) => (
+                {posts.slice(0,8).map((post) => (
                   <div
                     key={post.id}
                     className="snap-center flex-shrink-0 w-full xs:w-[88vw] sm:w-72 md:w-80"
@@ -255,9 +258,9 @@ const SocialMedia = () => {
         </section>
 
         {sortedCategories.map((category) => {
-          const categoryPosts = posts.filter(
-            (post) => post.category === category
-          );
+          const categoryPosts = posts
+            .filter((post) => post.category === category)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
           if (!categoryPosts.length) return null;
 
           return (

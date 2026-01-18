@@ -56,7 +56,7 @@ export default function BlogDetail() {
     const fetchComments = async () => {
       try {
         const response = await commentsAPI.getComments(id);
-        setComments(response.data);
+        setComments(response.data.comments || []);
       } catch (error) {
         console.error("Error fetching comments:", error);
       }
@@ -89,7 +89,7 @@ export default function BlogDetail() {
 
       // Refresh comments list
       const response = await commentsAPI.getComments(id);
-      setComments(response.data);
+      setComments(response.data.comments || []);
     } catch (error) {
       console.error("Error submitting comment:", error);
       alert("Failed to submit comment. Please try again.");

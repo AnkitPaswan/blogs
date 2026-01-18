@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { MessageCircle, Calendar, EyeIcon } from "lucide-react";
 import ShareButton from "../utils/ShareButton";
@@ -20,12 +20,44 @@ export default function AllPosts() {
     categories,
     loading,
     error,
+    hasMore,
+    isLoadingMore,
+    loadMorePosts,
   } = useAllPosts(categoryFromURL);
+
+  // Ref for the intersection observer target
+  const observerTarget = useRef(null);
 
   // Scroll top on navigation
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname, categoryFromURL]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+          loadMorePosts();
+        }
+      },
+      {
+        root: null,
+        rootMargin: "100px",
+        threshold: 0.1,
+      }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [hasMore, isLoadingMore, loadMorePosts]);
 
   return (
     <div className="p-4 md:p-10 rounded-xl bg-gray-50">
@@ -76,92 +108,120 @@ export default function AllPosts() {
 
         {/* Posts Grid */}
         {!loading && !error && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            {posts.length ? (
-              posts.map((post) => {
-                return (
-                  <Link
-                    key={post.id}
-                    to={`/blog/${post.id}`}
-                    className="group bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-[260px]"
-                  >
-                    {/* Top Row: Image + Title */}
-                    <div className="flex gap-4 mb-3">
-                      {/* Thumbnail */}
-                      {post.image ? (
-                        <img
-                          src={post.image || notFoundImage}
-                          alt={"post"}
-                          onError={(e) => {
-                            e.currentTarget.src = notFoundImage;
-                          }}
-                          className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-lg bg-gray-200 flex-shrink-0" />
-                      )}
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+              {posts.length ? (
+                posts.map((post) => {
+                  return (
+                    <Link
+                      key={post.id}
+                      to={`/blog/${post.id}`}
+                      className="group bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-[260px]"
+                    >
+                      {/* Top Row: Image + Title */}
+                      <div className="flex gap-4 mb-3">
+                        {/* Thumbnail */}
+                        {post.image ? (
+                          <img
+                            src={post.image || notFoundImage}
+                            alt={"post"}
+                            onError={(e) => {
+                              e.currentTarget.src = notFoundImage;
+                            }}
+                            className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-lg bg-gray-200 flex-shrink-0" />
+                        )}
 
-                      {/* Title + Category */}
-                      <div className="flex flex-col">
-                        <span className="text-xs font-medium text-blue-600 mb-1">
-                          {post.category}
-                        </span>
+                        {/* Title + Category */}
+                        <div className="flex flex-col">
+                          <span className="text-xs font-medium text-blue-600 mb-1">
+                            {post.category}
+                          </span>
 
-                        <h3 className="text-m font-semibold text-gray-900 group-hover:text-blue-600 transition line-clamp-2">
-                          {post.title}
-                        </h3>
-                      </div>
-                    </div>
-
-                    {/* Caption / Excerpt */}
-                    {/* <p className="text-sm text-gray-600 line-clamp-3 mb-4">
-                      {post.caption || post.content}
-                    </p> */}
-                    <div
-                      className="text-sm text-gray-600 line-clamp-3 mb-4 prose prose-sm max-w-none prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800"
-                      dangerouslySetInnerHTML={{
-                        __html: DOMPurify.sanitize(
-                          post.content || post.caption
-                        ),
-                      }}
-                    />
-
-                    {/* Footer */}
-                    <div className="mt-auto flex items-center justify-between pt-3 border-t">
-                      <div className="flex items-center gap-4 text-gray-500 text-sm">
-                        <span className="flex items-center gap-1">
-                          <MessageCircle size={15} />
-                          {post.commentCount}
-                        </span>
-
-                        <span className="flex items-center gap-1">
-                          <EyeIcon size={15} />
-                          {post.views}
-                        </span>
-
-                        <ShareButton
-                          url={`/blog/${post.id}`}
-                          title={post.title}
-                          className="hover:text-blue-600"
-                        />
+                          <h3 className="text-m font-semibold text-gray-900 group-hover:text-blue-600 transition line-clamp-2">
+                            {post.title}
+                          </h3>
+                        </div>
                       </div>
 
-                      <span className="flex items-center gap-1 text-xs text-gray-400">
-                        <Calendar size={13} />
-                        {formatDate(post.createdAt)}
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })
-            ) : (
-              <p className="col-span-full text-center text-gray-500 py-10">
-                No posts found.
-              </p>
-            )}
-          </div>
+                      {/* Caption / Excerpt */}
+                      <div
+                        className="text-sm text-gray-600 line-clamp-3 mb-4 prose prose-sm max-w-none prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800"
+                        dangerouslySetInnerHTML={{
+                          __html: DOMPurify.sanitize(
+                            post.content || post.caption
+                          ),
+                        }}
+                      />
+
+                      {/* Footer */}
+                      <div className="mt-auto flex items-center justify-between pt-3 border-t">
+                        <div className="flex items-center gap-4 text-gray-500 text-sm">
+                          <span className="flex items-center gap-1">
+                            <MessageCircle size={15} />
+                            {post.commentCount}
+                          </span>
+
+                          <span className="flex items-center gap-1">
+                            <EyeIcon size={15} />
+                            {post.views}
+                          </span>
+
+                          <ShareButton
+                            url={`/blog/${post.id}`}
+                            title={post.title}
+                            className="hover:text-blue-600"
+                          />
+                        </div>
+
+                        <span className="flex items-center gap-1 text-xs text-gray-400">
+                          <Calendar size={13} />
+                          {formatDate(post.createdAt)}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })
+              ) : (
+                <p className="col-span-full text-center text-gray-500 py-10">
+                  No posts found.
+                </p>
+              )}
+            </div>
+
+            {/* Infinite Scroll Trigger & Loading State */}
+            <div
+              ref={observerTarget}
+              className="mt-6 flex flex-col items-center justify-center"
+            >
+              {/* Loading more skeleton */}
+              {isLoadingMore && (
+                <div className="w-full">
+                  <SkeletonLoader
+                    count={8}
+                    className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4"
+                  />
+                </div>
+              )}
+
+              {/* End of posts message */}
+              {!hasMore && posts.length > 0 && (
+                <p className="text-gray-400 text-sm">
+                  You've reached the end of the posts
+                </p>
+              )}
+
+              {/* No posts at all */}
+              {!hasMore && posts.length === 0 && !loading && (
+                <p className="text-gray-500 text-sm">No posts available</p>
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>
   );
 }
+
