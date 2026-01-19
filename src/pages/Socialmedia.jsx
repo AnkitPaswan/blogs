@@ -10,6 +10,7 @@ import {
 import { fetchHomePosts } from "../services/api";
 import ShareButton from "../utils/ShareButton";
 import { SkeletonLoaderForHome } from "../utils/SkeletonLoader";
+import ErrorState from "../utils/ErrorState";
 import { formatDate } from "../utils/formatDate";
 import DOMPurify from "dompurify";
 import notFoundImage from "/assets/notfound.webp";
@@ -58,6 +59,13 @@ const SocialMedia = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle retry when error occurs
+  const handleRetry = () => {
+    setLoading(true);
+    setError(null);
+    loadData();
   };
 
   useEffect(() => {
@@ -189,7 +197,16 @@ const SocialMedia = () => {
   }
 
   if (error) {
-    return <div className="text-center py-10 text-red-500">{error}</div>;
+    return (
+      <ErrorState
+        title="Unable to Load Posts"
+        message={error}
+        onRetry={handleRetry}
+        showRetry={true}
+        showHome={true}
+        className="min-h-screen bg-gray-50"
+      />
+    );
   }
 
   return (

@@ -5,6 +5,7 @@ import ShareButton from "../utils/ShareButton";
 import useAllPosts from "../hooks/useAllPosts";
 import { formatDate } from "../utils/formatDate";
 import { SkeletonLoader } from "../utils/SkeletonLoader";
+import ErrorState from "../utils/ErrorState";
 import notFoundImage from "/assets/notfound.webp";
 import DOMPurify from "dompurify";
 
@@ -104,7 +105,16 @@ export default function AllPosts() {
         )}
 
         {/* Error */}
-        {error && <div className="text-center py-10 text-red-500">{error}</div>}
+        {error && (
+          <ErrorState
+            title="Unable to Load Posts"
+            message={error}
+            onRetry={() => window.location.reload()}
+            showRetry={true}
+            showHome={true}
+            className="min-h-[400px]"
+          />
+        )}
 
         {/* Posts Grid */}
         {!loading && !error && (

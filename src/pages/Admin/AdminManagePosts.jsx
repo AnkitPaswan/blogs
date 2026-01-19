@@ -27,6 +27,7 @@ export default function AdminManagePosts() {
     category: "",
     tag: "",
     image: "",
+    trivia: "",
   });
   const [editPostId, setEditPostId] = useState(null);
 
@@ -216,6 +217,7 @@ export default function AdminManagePosts() {
         category: "",
         tag: "",
         image: "",
+        trivia: "",
       });
       setEditPostId(null);
     } catch (error) {
@@ -233,6 +235,7 @@ export default function AdminManagePosts() {
       category: post.category || "",
       tag: post.tag || "",
       image: post.image || "",
+      trivia: post.trivia || "",
     });
     setEditPostId(post.id);
     setShowModal(true);

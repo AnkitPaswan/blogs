@@ -93,6 +93,7 @@ export default function ManagePostsView({
                   category: "",
                   tag: "",
                   image: "",
+                  trivia: "",
                 });
                 setEditPostId(null);
                 setShowModal(true);
@@ -273,6 +274,7 @@ export default function ManagePostsView({
                   category: "",
                   tag: "",
                   image: "",
+                  trivia: "",
                 });
                 setEditPostId(null);
                 setShowModal(true);

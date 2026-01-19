@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import {
-  ArrowLeft,
-  Tag,
-  MessageCircle,
-} from "lucide-react";
+import { Tag, MessageCircle, ArrowLeft, Calendar, EyeIcon } from "lucide-react";
 import { postsAPI, commentsAPI } from "../services/api";
 import ShareButton from "../utils/ShareButton";
 import { SkeletonLoaderForPostDetails } from "../utils/SkeletonLoader";
+import ErrorState from "../utils/ErrorState";
 import notFoundImage from "/assets/notfound.webp";
+import TriviaModal from "../components/TriviaModal";
 
 export default function BlogDetail() {
   const { id } = useParams();
@@ -74,14 +72,15 @@ export default function BlogDetail() {
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
-    if (!commentFormData.name.trim() || !commentFormData.comment.trim()) {
+    if (!commentFormData.comment.trim()) {
       return;
     }
 
     setSubmitting(true);
     try {
       await commentsAPI.addComment({
-        ...commentFormData,
+        name: commentFormData.name.trim() || "Anonymous",
+        comment: commentFormData.comment,
         postId: id,
       });
       setCommentFormData({ name: "", comment: "" });
@@ -102,31 +101,36 @@ export default function BlogDetail() {
     setShowCommentForm(!showCommentForm);
   };
 
+  const [showTrivia, setShowTrivia] = useState(false);
+  const [activeTrivia, setActiveTrivia] = useState(null);
+
+  const openTrivia = (triviaData) => {
+    setActiveTrivia(triviaData);
+    setShowTrivia(true);
+  };
+
+  const closeTrivia = () => {
+    setShowTrivia(false);
+    setActiveTrivia(null);
+  };
+
   if (loading) {
-    return (
-      <SkeletonLoaderForPostDetails/>
-    );
+    return <SkeletonLoaderForPostDetails />;
   }
 
   if (error || !post) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Post Not Found
-          </h1>
-          <p className="text-gray-600 mb-6">
-            The post you're looking for doesn't exist.
-          </p>
-          <Link
-            to="/"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Link>
-        </div>
-      </div>
+      <ErrorState
+        title="Post Not Found"
+        message={
+          error ||
+          "The post you're looking for doesn't exist or has been removed."
+        }
+        onRetry={() => window.location.reload()}
+        showRetry={true}
+        showHome={true}
+        className="min-h-screen bg-gray-50"
+      />
     );
   }
 
@@ -152,9 +156,9 @@ export default function BlogDetail() {
               <img
                 src={post.image}
                 alt="Post"
-                  onError={(e) => {
-    e.currentTarget.src = notFoundImage;
-  }}
+                onError={(e) => {
+                  e.currentTarget.src = notFoundImage;
+                }}
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-4 left-4">
@@ -168,6 +172,23 @@ export default function BlogDetail() {
           {/* Post Content */}
           <div className="p-6 md:p-8">
             {/* Post Text - Rendered from TipTap HTML content */}
+            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-4 leading-snug">
+              {post.title}
+            </h1>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-6">
+              <span className="inline-flex items-center gap-1.5">
+                <Calendar size={14} />
+                {new Date(post.createdAt).toLocaleDateString()}
+              </span>
+
+              {post.views && (
+                <span className="inline-flex items-center gap-1.5">
+                  <EyeIcon size={14} />
+                  {post.views} views
+                </span>
+              )}
+            </div>
+
             <div
               className="prose prose-lg max-w-none mb-6 prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800"
               dangerouslySetInnerHTML={{ __html: post.content }}
@@ -182,7 +203,29 @@ export default function BlogDetail() {
 
             {/* Tags and Stats */}
             <div className="flex flex-wrap items-center justify-between pt-6 border-t border-gray-200">
+              {/* Left Section */}
               <div className="flex items-center space-x-4">
+                {/* Trivia Button (Tag ke LEFT me) */}
+                {post.trivia && post.trivia.length > 0 && (
+                  <button
+                    onClick={() => openTrivia(post.trivia)}
+                    className="
+    inline-flex items-center gap-2
+    px-3.5 py-1.5
+    text-xs font-semibold
+    rounded-md
+    bg-blue-600 text-white
+    hover:bg-blue-700
+    focus:outline-none focus:ring-2 focus:ring-blue-500/40
+    transition-all
+  "
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
+                    Trivia
+                  </button>
+                )}
+
+                {/* Tag */}
                 {post.tag && (
                   <div className="flex items-center space-x-1">
                     <Tag className="w-4 h-4 text-gray-400" />
@@ -191,6 +234,7 @@ export default function BlogDetail() {
                 )}
               </div>
 
+              {/* Right Section */}
               <div className="flex items-center space-x-6 text-sm text-gray-500">
                 <button
                   onClick={toggleCommentForm}
@@ -199,10 +243,10 @@ export default function BlogDetail() {
                   <MessageCircle className="text-gray-500" />
                   <span>{comments.length}</span>
                 </button>
+
                 <ShareButton
                   url={`/blog/${post.id || post._id}`}
                   title={post.title || "Check out this post!"}
-                  // showLabel={false}
                 />
               </div>
             </div>
@@ -258,7 +302,6 @@ export default function BlogDetail() {
                   onChange={handleCommentInputChange}
                   placeholder="Enter your name"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  required
                 />
               </div>
               <div className="mb-4">
@@ -328,6 +371,11 @@ export default function BlogDetail() {
             </div>
           )}
         </div>
+        <TriviaModal
+          isOpen={showTrivia}
+          onClose={closeTrivia}
+          trivia={activeTrivia}
+        />
       </div>
     </div>
   );

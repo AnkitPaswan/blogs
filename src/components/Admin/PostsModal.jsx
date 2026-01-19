@@ -131,6 +131,19 @@ export default function PostsModal({
                 onChange={(e) => setNewPost({ ...newPost, caption: e.target.value })}
               />
             </div>
+
+
+            {/* trivia */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <FileText className="w-4 h-4 text-gray-500" />
+                <label className="text-sm font-medium text-gray-700">Trivia</label>
+              </div>
+              <TiptapEditor
+                value={newPost.trivia}
+                onChange={(html) => setNewPost({ ...newPost, trivia: html })}
+              />
+            </div>
           </div>
 
           {/* Form Actions */}
