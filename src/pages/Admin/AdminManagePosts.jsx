@@ -27,7 +27,10 @@ export default function AdminManagePosts() {
     category: "",
     tag: "",
     image: "",
-    trivia: "",
+    trivia: {
+    content: "",
+    knowledgeArticleId: null,
+  },
   });
   const [editPostId, setEditPostId] = useState(null);
 

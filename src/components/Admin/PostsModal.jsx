@@ -1,5 +1,16 @@
-import { X, Plus, Edit, FileText, Tag, Image, Save } from "lucide-react";
+import {
+  X,
+  Plus,
+  Edit,
+  FileText,
+  Tag,
+  Image,
+  Save,
+  Loader2,
+} from "lucide-react";
 import TiptapEditor from "../../utils/TipTapEditor";
+import { useState, useEffect } from "react";
+import { knowledgeAPI } from "../../services/knowledgeAPI";
 
 export default function PostsModal({
   showModal,
@@ -10,6 +21,28 @@ export default function PostsModal({
   categories,
   handleAddOrEditPost,
 }) {
+  const [knowledgeList, setKnowledgeList] = useState([]);
+  const [knowledgeLoading, setKnowledgeLoading] = useState(false);
+
+  // Fetch knowledge list on mount
+  useEffect(() => {
+    const fetchKnowledge = async () => {
+      try {
+        setKnowledgeLoading(true);
+        const response = await knowledgeAPI.getAllKnowledge();
+        setKnowledgeList(response.data || []);
+      } catch (error) {
+        console.error("Error fetching knowledge articles:", error);
+      } finally {
+        setKnowledgeLoading(false);
+      }
+    };
+
+    if (showModal) {
+      fetchKnowledge();
+    }
+  }, [showModal]);
+
   if (!showModal) return null;
 
   return (
@@ -20,14 +53,20 @@ export default function PostsModal({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                {editPostId ? <Edit className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
+                {editPostId ? (
+                  <Edit className="w-6 h-6" />
+                ) : (
+                  <Plus className="w-6 h-6" />
+                )}
               </div>
               <div>
                 <h3 className="text-xl font-bold">
                   {editPostId ? "Edit Post" : "Create New Post"}
                 </h3>
                 <p className="text-blue-100 text-sm">
-                  {editPostId ? "Update your blog post details" : "Share your thoughts with the world"}
+                  {editPostId
+                    ? "Update your blog post details"
+                    : "Share your thoughts with the world"}
                 </p>
               </div>
             </div>
@@ -40,20 +79,27 @@ export default function PostsModal({
           </div>
         </div>
 
-        <form onSubmit={handleAddOrEditPost} className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
+        <form
+          onSubmit={handleAddOrEditPost}
+          className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto"
+        >
           <div className="space-y-6">
             {/* Post Title */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-gray-500" />
-                <label className="text-sm font-medium text-gray-700">Post Title</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Post Title
+                </label>
               </div>
               <input
                 type="text"
                 placeholder="Enter post title"
                 className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
                 value={newPost.title}
-                onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                onChange={(e) =>
+                  setNewPost({ ...newPost, title: e.target.value })
+                }
               />
             </div>
 
@@ -62,30 +108,40 @@ export default function PostsModal({
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <Tag className="w-4 h-4 text-gray-500" />
-                  <label className="text-sm font-medium text-gray-700">Category</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Category
+                  </label>
                 </div>
                 <select
                   className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
                   value={newPost.category}
-                  onChange={(e) => setNewPost({ ...newPost, category: e.target.value })}
+                  onChange={(e) =>
+                    setNewPost({ ...newPost, category: e.target.value })
+                  }
                 >
                   <option value="">Select Category</option>
                   {categories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
                   ))}
                 </select>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <Tag className="w-4 h-4 text-gray-500" />
-                  <label className="text-sm font-medium text-gray-700">Tags</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Tags
+                  </label>
                 </div>
                 <input
                   type="text"
                   placeholder="Tags (comma separated)"
                   className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
                   value={newPost.tag}
-                  onChange={(e) => setNewPost({ ...newPost, tag: e.target.value })}
+                  onChange={(e) =>
+                    setNewPost({ ...newPost, tag: e.target.value })
+                  }
                 />
               </div>
             </div>
@@ -94,14 +150,18 @@ export default function PostsModal({
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <Image className="w-4 h-4 text-gray-500" />
-                <label className="text-sm font-medium text-gray-700">Featured Image</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Featured Image
+                </label>
               </div>
               <input
                 type="text"
                 placeholder="Image URL"
                 className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
                 value={newPost.image}
-                onChange={(e) => setNewPost({ ...newPost, image: e.target.value })}
+                onChange={(e) =>
+                  setNewPost({ ...newPost, image: e.target.value })
+                }
               />
             </div>
 
@@ -109,7 +169,9 @@ export default function PostsModal({
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-gray-500" />
-                <label className="text-sm font-medium text-gray-700">Post Content</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Post Content
+                </label>
               </div>
               <TiptapEditor
                 value={newPost.content}
@@ -121,29 +183,68 @@ export default function PostsModal({
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-gray-500" />
-                <label className="text-sm font-medium text-gray-700">Caption</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Caption
+                </label>
               </div>
               <input
                 type="text"
                 placeholder="Post caption (optional)"
                 className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
                 value={newPost.caption}
-                onChange={(e) => setNewPost({ ...newPost, caption: e.target.value })}
+                onChange={(e) =>
+                  setNewPost({ ...newPost, caption: e.target.value })
+                }
               />
             </div>
-
 
             {/* trivia */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-gray-500" />
-                <label className="text-sm font-medium text-gray-700">Trivia</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Trivia Content(optional)
+                </label>
               </div>
               <TiptapEditor
-                value={newPost.trivia}
-                onChange={(html) => setNewPost({ ...newPost, trivia: html })}
+                value={newPost.trivia.content}
+                onChange={(html) =>
+                  setNewPost({
+                    ...newPost,
+                    trivia: {
+                      ...newPost.trivia,
+                      content: html,
+                    },
+                  })
+                }
               />
             </div>
+            <select
+              value={newPost.trivia.knowledgeArticleId || ""}
+              onChange={(e) =>
+                setNewPost({
+                  ...newPost,
+                  trivia: {
+                    ...newPost.trivia,
+                    knowledgeArticleId: e.target.value || null,
+                  },
+                })
+              }
+              className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50"
+              disabled={knowledgeLoading}
+            >
+              <option value="">
+                {knowledgeLoading
+                  ? "Loading knowledge articles..."
+                  : "Select Knowledge Article (optional)"}
+              </option>
+              {!knowledgeLoading &&
+                knowledgeList.map((k) => (
+                  <option key={k._id} value={k._id}>
+                    {k.title}
+                  </option>
+                ))}
+            </select>
           </div>
 
           {/* Form Actions */}
@@ -168,4 +269,3 @@ export default function PostsModal({
     </div>
   );
 }
-

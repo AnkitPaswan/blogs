@@ -1,4 +1,4 @@
-import { BarChart3, FileText, Tag, LogOut, Settings, User, X } from "lucide-react";
+import { BarChart3, FileText, Tag, BookOpen, LogOut, Settings, User, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Sidebar({ active, setActive, isSidebarOpen, setIsSidebarOpen }) {
@@ -8,6 +8,7 @@ export default function Sidebar({ active, setActive, isSidebarOpen, setIsSidebar
     { name: "Dashboard", icon: BarChart3 },
     { name: "Manage Posts", icon: FileText },
     { name: "Manage Categories", icon: Tag },
+    { name: "Manage Knowledge", icon: BookOpen },
   ];
 
   const handleLogout = () => {

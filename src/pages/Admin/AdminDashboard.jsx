@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "./AdminSideBar";
 import AdminManagePosts from "./AdminManagePosts";
 import ManageCategories from "./AdminManageCategories";
+import AdminManageKnowledge from "./AdminManageKnowledge";
 import { postsAPI } from "../../services/api";
 import { FileText, Eye, MessageCircle, TrendingUp, Users, Activity, Menu } from "lucide-react";
 import {
@@ -349,6 +350,10 @@ export default function AdminDashboard() {
 
           {active === "Manage Categories" && (
             <ManageCategories />
+          )}
+
+          {active === "Manage Knowledge" && (
+            <AdminManageKnowledge />
           )}
         </div>
       </div>

@@ -201,12 +201,44 @@ export default function BlogDetail() {
               </div>
             )}
 
+            {/* Trivia Box */}
+            {/* Trivia Box (only if trivia exists) */}
+            {post.trivia?.content && (
+              <div className="mb-8 rounded-xl border border-blue-200 bg-blue-50/60 p-5">
+                <h4 className="text-xs font-semibold uppercase text-blue-700 mb-2">
+                  Trivia
+                </h4>
+
+                {/* Trivia HTML from TipTap */}
+                <div
+                  className="
+        prose prose-sm max-w-none
+        text-gray-700
+        prose-p:my-1
+        prose-a:text-blue-600
+        prose-a:underline
+      "
+                  dangerouslySetInnerHTML={{ __html: post.trivia.content }}
+                />
+
+                {/* Optional Knowledge link */}
+                {post.trivia.knowledgeArticleId && (
+                  <button
+                    onClick={() => openTrivia(post.trivia.knowledgeArticleId)}
+                    className="mt-3 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    Read more →
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Tags and Stats */}
             <div className="flex flex-wrap items-center justify-between pt-6 border-t border-gray-200">
               {/* Left Section */}
               <div className="flex items-center space-x-4">
                 {/* Trivia Button (Tag ke LEFT me) */}
-                {post.trivia && post.trivia.length > 0 && (
+                {/* {post.trivia && post.trivia.length > 0 && (
                   <button
                     onClick={() => openTrivia(post.trivia)}
                     className="
@@ -223,7 +255,7 @@ export default function BlogDetail() {
                     <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
                     Trivia
                   </button>
-                )}
+                )} */}
 
                 {/* Tag */}
                 {post.tag && (
