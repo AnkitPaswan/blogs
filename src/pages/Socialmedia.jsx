@@ -238,19 +238,19 @@ const SocialMedia = () => {
           </div>
 
           {/* Carousel Wrapper */}
-          <div className="relative -ml-4 -mr-4 px-4 md:px-0 md:ml-0 md:mr-0">
-            {/* Left Arrow */}
+          <div className="relative -ml-4 -mr-2 px-0 md:px-0 md:ml-0 md:mr-0">
+            {/* Left Arrow - Hidden on mobile */}
             <button
               onClick={() => scrollCarousel("trending", "left")}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
+              className="hidden md:block absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
             >
               <ChevronLeft size={22} />
             </button>
 
-            {/* Right Arrow */}
+            {/* Right Arrow - Hidden on mobile */}
             <button
               onClick={() => scrollCarousel("trending", "right")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
+              className="hidden md:block absolute right-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
             >
               <ChevronRight size={22} />
             </button>
@@ -260,11 +260,11 @@ const SocialMedia = () => {
               ref={(el) => (carouselRefs.current["trending"] = el)}
               className="overflow-x-auto scrollbar-hide snap-x snap-mandatory"
             >
-              <div className="flex gap-4 py-3 px-4 xs:px-0 snap-x snap-mandatory">
+              <div className="flex gap-3 py-3 px-2 xs:px-0 snap-x snap-mandatory">
                 {posts.slice(0,8).map((post) => (
                   <div
                     key={post.id}
-                    className="snap-center flex-shrink-0 w-full xs:w-[88vw] sm:w-72 md:w-80"
+                    className="snap-center flex-shrink-0 w-[75vw] xs:w-[75vw] sm:w-72 md:w-80"
                   >
                     <PostCard post={post} />
                   </div>
@@ -299,19 +299,19 @@ const SocialMedia = () => {
               </div>
 
               {/* Carousel Wrapper */}
-              <div className="relative -ml-4 -mr-4 px-4 md:px-0 md:ml-0 md:mr-0">
-                {/* Left Arrow */}
+              <div className="relative -ml-4 -mr-4 px-2 md:px-0 md:ml-0 md:mr-0">
+              {/* Left Arrow - Hidden on mobile */}
                 <button
                   onClick={() => scrollCarousel(category, "left")}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
+                  className="hidden md:block absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
                 >
                   <ChevronLeft size={22} />
                 </button>
 
-                {/* Right Arrow */}
+                {/* Right Arrow - Hidden on mobile */}
                 <button
                   onClick={() => scrollCarousel(category, "right")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
+                  className="hidden md:block absolute right-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white shadow-md rounded-full text-indigo-600 hover:bg-indigo-50 transition"
                 >
                   <ChevronRight size={22} />
                 </button>
@@ -321,11 +321,11 @@ const SocialMedia = () => {
                   ref={(el) => (carouselRefs.current[category] = el)}
                   className="overflow-x-auto scrollbar-hide snap-x snap-mandatory"
                 >
-                  <div className="flex gap-4 py-3 px-4 xs:px-0 snap-x snap-mandatory">
+                  <div className="flex gap-3 py-3 px-0 xs:px-0 snap-x snap-mandatory">
                     {categoryPosts.map((post) => (
                       <div
                         key={post.id}
-                        className="snap-center flex-shrink-0 w-full xs:w-[88vw] sm:w-72 md:w-80"
+                        className="snap-center flex-shrink-0 w-[75vw] xs:w-[75vw] sm:w-72 md:w-80"
                       >
                         <PostCard post={post} />
                       </div>
