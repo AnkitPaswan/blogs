@@ -57,6 +57,21 @@ export default function KnowledgeModal({
                 required
               />
             </div>
+            {/* Article Category */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <FileText className="w-4 h-4 text-gray-500" />
+                <label className="text-sm font-medium text-gray-700">Category</label>
+              </div>
+              <input
+                type="text"
+                placeholder="Enter article category"
+                className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50/50"
+                value={newKnowledge.category}
+                onChange={(e) => setNewKnowledge({ ...newKnowledge, category: e.target.value })}
+                required
+              />
+            </div>
 
             {/* Article Content */}
             <div className="space-y-4">

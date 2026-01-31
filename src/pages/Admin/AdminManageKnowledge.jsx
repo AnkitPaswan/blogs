@@ -10,6 +10,7 @@ export default function AdminManageKnowledge() {
   const [showModal, setShowModal] = useState(false);
   const [newKnowledge, setNewKnowledge] = useState({
     title: "",
+    category: "",
     content: "",
   });
   const [editKnowledgeId, setEditKnowledgeId] = useState(null);
@@ -73,6 +74,7 @@ export default function AdminManageKnowledge() {
       setShowModal(false);
       setNewKnowledge({
         title: "",
+        category: "",
         content: "",
       });
     } catch (error) {
@@ -99,6 +101,7 @@ export default function AdminManageKnowledge() {
   const handleEdit = (article) => {
     setNewKnowledge({
       title: article.title,
+      category: article.category,
       content: article.content,
     });
     setEditKnowledgeId(article._id);
@@ -108,6 +111,7 @@ export default function AdminManageKnowledge() {
   const handleNewKnowledge = () => {
     setNewKnowledge({
       title: "",
+      category: "",
       content: "",
     });
     setEditKnowledgeId(null);
@@ -140,7 +144,7 @@ export default function AdminManageKnowledge() {
               >
                 <option value="all">All Articles</option>
                 {knowledgeArticles.map((article) => (
-                  <option key={article._id} value={article._id}>{article.title}</option>
+                  <option key={article._id} value={article._id}>{article.category}</option>
                 ))}
               </select>
             </div>
@@ -163,16 +167,21 @@ export default function AdminManageKnowledge() {
           <div key={article._id} className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             {/* Article Header */}
             <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+              <div className="flex items-center space-x-3 mb-2">
+                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
                   <FileText className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-white text-lg line-clamp-1">{article.title}</h3>
-                  <p className="text-purple-100 text-sm">
-                    {formatDate(article.createdAt)}
-                  </p>
-                </div>
+                <h3 className="font-semibold text-white text-lg line-clamp-1">{article.title}</h3>
+              </div>
+              <div className="flex items-center justify-between pl-11">
+                {article.category && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/20 text-white">
+                    {article.category}
+                  </span>
+                )}
+                <span className="text-purple-100 text-xs">
+                  {formatDate(article.createdAt)}
+                </span>
               </div>
             </div>
 

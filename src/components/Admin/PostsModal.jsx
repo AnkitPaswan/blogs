@@ -23,6 +23,14 @@ export default function PostsModal({
 }) {
   const [knowledgeList, setKnowledgeList] = useState([]);
   const [knowledgeLoading, setKnowledgeLoading] = useState(false);
+  const [knowledgeQuery, setKnowledgeQuery] = useState("");
+const [showKnowledgeDropdown, setShowKnowledgeDropdown] = useState(false);
+const filteredKnowledge = knowledgeList.filter((k) =>
+  `${k.category} ${k.title}`
+    .toLowerCase()
+    .includes(knowledgeQuery.toLowerCase())
+);
+
 
   // Fetch knowledge list on mount
   useEffect(() => {
@@ -219,7 +227,7 @@ export default function PostsModal({
                 }
               />
             </div>
-            <select
+            {/* <select
               value={newPost.trivia.knowledgeArticleId || ""}
               onChange={(e) =>
                 setNewPost({
@@ -241,10 +249,64 @@ export default function PostsModal({
               {!knowledgeLoading &&
                 knowledgeList.map((k) => (
                   <option key={k._id} value={k._id}>
-                    {k.title}
+                    {k.category} - {k.title}
                   </option>
                 ))}
-            </select>
+            </select> */}
+            <div className="space-y-2 relative">
+  <input
+    type="text"
+    placeholder={
+      knowledgeLoading
+        ? "Loading knowledge articles..."
+        : "Search Knowledge Article (optional)"
+    }
+    value={knowledgeQuery}
+    disabled={knowledgeLoading}
+    onChange={(e) => {
+      setKnowledgeQuery(e.target.value);
+      setShowKnowledgeDropdown(true);
+    }}
+    onFocus={() => setShowKnowledgeDropdown(true)}
+    className="w-full border border-gray-200 rounded-lg px-4 py-3
+    focus:outline-none focus:ring-2 focus:ring-blue-500
+    bg-gray-50/50"
+  />
+
+  {/* Dropdown */}
+  {showKnowledgeDropdown && !knowledgeLoading && (
+    <div className="absolute z-50 mt-1 w-full max-h-60 overflow-auto
+    rounded-lg border bg-white shadow-lg">
+      {filteredKnowledge.length > 0 ? (
+        filteredKnowledge.map((k) => (
+          <div
+            key={k._id}
+            onClick={() => {
+              setNewPost({
+                ...newPost,
+                trivia: {
+                  ...newPost.trivia,
+                  knowledgeArticleId: k._id,
+                },
+              });
+              setKnowledgeQuery(`${k.category} - ${k.title}`);
+              setShowKnowledgeDropdown(false);
+            }}
+            className="px-4 py-2 cursor-pointer hover:bg-blue-50 text-sm"
+          >
+            <span className="font-medium">{k.category}</span>
+            <span className="text-gray-500"> — {k.title}</span>
+          </div>
+        ))
+      ) : (
+        <div className="px-4 py-2 text-sm text-gray-500">
+          No matching article found
+        </div>
+      )}
+    </div>
+  )}
+</div>
+
           </div>
 
           {/* Form Actions */}
