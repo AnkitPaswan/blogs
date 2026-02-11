@@ -154,11 +154,6 @@ const SocialMedia = () => {
           </div>
         </div>
 
-        {/* Caption / Excerpt */}
-        {/* <p className="text-sm text-gray-600 line-clamp-3 mb-4">
-          {post.caption || post.content}
-        </p> */}
-
         <div
           className="text-sm text-gray-600 line-clamp-3 mb-4 prose prose-sm max-w-none prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800"
           dangerouslySetInnerHTML={{
