@@ -1,4 +1,19 @@
-import { X, Search, Menu, BarChart3, FileText, Clock, Bookmark, Briefcase, Bell, Sliders, Dices, Package, Home as HomeIcon, LayoutDashboard as LayoutDashboardIcon } from "lucide-react";
+import {
+  X,
+  Search,
+  Menu,
+  BarChart3,
+  FileText,
+  Clock,
+  Bookmark,
+  Briefcase,
+  Bell,
+  Sliders,
+  Dices,
+  Package,
+  Home as HomeIcon,
+  LayoutDashboard as LayoutDashboardIcon,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import Searchbar from "./Searchbar";
@@ -43,7 +58,10 @@ export default function Navbar() {
   // Close mobile search when clicking outside
   useEffect(() => {
     function handleClickOutside(e) {
-      if (mobileSearchRef.current && !mobileSearchRef.current.contains(e.target)) {
+      if (
+        mobileSearchRef.current &&
+        !mobileSearchRef.current.contains(e.target)
+      ) {
         setShowMobileSearch(false);
       }
     }
@@ -53,10 +71,8 @@ export default function Navbar() {
 
   return (
     <div className="w-full shadow-sm fixed top-0 z-50 bg-white">
-
       {/* MAIN NAVBAR */}
       <div className="flex items-center justify-between px-4 md:px-20 py-3 bg-white relative">
-
         {/* LEFT — LOGO */}
         <button
           onClick={() => navigate("/")}
@@ -68,7 +84,6 @@ export default function Navbar() {
 
         {/* RIGHT SIDE */}
         <div className="flex items-center space-x-2">
-
           {/* DESKTOP SEARCH */}
           <div className="hidden sm:block w-[350px]">
             <Searchbar />
@@ -169,8 +184,6 @@ export default function Navbar() {
           <span className="ml-3 text-lg">✨</span>
         </span>
       </div>
-
     </div>
   );
 }
-
